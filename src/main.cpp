@@ -1,10 +1,29 @@
 // *****************************************************************************
 //  Project:            Eperly - Lite
-//  Firmware Version:   1.0
+//  Firmware Version:   1.1
 //  MCU:                diyMore ESP8266 with 0.99" OLED LCD Module
 //  Author:             Mark Angelo Tarvina (Tarvs' Hobbytronics)
 //  Email:              mttarvina@gmail.com
-//  Last Updated:       01.Dec.2023
+//  Last Updated:       08.Dec.2023
+// *****************************************************************************
+
+
+// *****************************************************************************
+// Release Notes:
+// v1.0
+//      + Initial release
+//
+// v1.1
+//      + Updated server webpage, added CSS styling by @dajcoding
+//      + Increased wait time for logo display from 3secs to 5secs
+//      + Increased LED brightness adjustment increment from 5 to 25
+//      + Increase LED heartbeat transition delay from 25ms to 50ms
+//      + Increase LED color adjustment (r,g,b values) increment from 1 to 5
+//      + Updated color palette
+//      + Modified the approach when changing LED color
+//          - Now checks the uri link and determines what color index is present
+//          - in the hyperlink
+//          - Removed typedef enum ColorSheme
 // *****************************************************************************
 
 
@@ -18,63 +37,21 @@
 
 
 // Definitions
-#define DEBUG                           false
+#define DEBUG                           true
 #define SERIAL_TIMEOUT                  8000
 #define WIFI_PORT                       80
-#define SERVER_TIMEOUT                  2000                                    // (ms)
+#define SERVER_TIMEOUT                  5000                                    // (ms)
 #define LED_MAX_BRIGHTNESS              255
+#define LED_MIN_BRIGHTNESS              15
 #define LED_NUM                         8                                       // 8 LEDs in Neopixel ring
 #define LED_PIN                         D1                                      // D5
 #define LED_ROTATE_TRANSITION_DELAY     120                                     // (ms)
-#define LED_HEARTBEAT_TRANSITION_DELAY  25                                      // (ms)
+#define LED_HEARTBEAT_TRANSITION_DELAY  50                                      // (ms)
+#define LED_BRIGHTNESS_INCREMENT        25
+#define LED_COLOR_TUNE_INCREMENT        5                                      
 #define EEPROM_SIZE                     259                                     // 3 character indicators + 256 bytes for wifi ssid and password
 #define LCD_SDA_PIN                     D5
 #define LCD_SCL_PIN                     D6
-
-
-typedef enum {
-    CWHITE                              = 0,           
-    CANDLE,          
-    TUNGSTEN,        
-    IVORY,           
-    CLEAR_BLUE_SKY,  
-    FLOURESCENT,     
-    HALOGEN,         
-    OVERCAST_SKY,    
-    OFF_WHITE,       
-    CREAM,           
-    BUTTER,          
-    CANARY_YELLOW,   
-    BANANA_YELLOW,   
-    CHEESE,          
-    NEON_YELLOW,     
-    MARIGOLD,        
-    HONEY,           
-    MUSTARD,         
-    HARVEST_GOLD,    
-    SATIN_GOLD,      
-    FLOURESCENT_BLUE,
-    PASTEL,          
-    AQUA,            
-    SKY_BLUE,        
-    MALIBU_BLUE,     
-    TEAL_BLUE,       
-    OCEAN_BLUE,      
-    SAPPHIRE_BLUE,   
-    NEON_BLUE,       
-    INDIGO,          
-    AMBER,           
-    APRICOT,         
-    PEACH,           
-    AMARANTH,        
-    ROSE_RED,        
-    SCARLET,         
-    THISTLE,         
-    NEON_PURPLE,     
-    CLASSIC_PURPLE,  
-    GRAPE           
-} ColorScheme;
-
 
 
 typedef enum {
@@ -84,7 +61,6 @@ typedef enum {
 } LEDPattern;
 
 
-// 'favicon', 64x128px
 const unsigned char logo [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -152,66 +128,60 @@ const unsigned char logo [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-// // Array of all bitmaps for convenience. (Total bytes used to store images in PROGMEM = 1040)
-// const int myBitmapallArray_LEN = 1;
-// const unsigned char* myBitmapallArray[1] = {
-// 	myBitmapfavicon
-// };
 
-
-
-
-
-
-
-
-// Lookup table for color palette
 const int           colorTable[40]      = {
-    0xFFE08C,
-    0xFF9329,
-    0xFFD6AA,
-    0xFFFFF0,
-    0x409CFF,
-    0xF4FFFA,
-    0xFFF1E0,
-    0xC9E2FF,
-    0xF2E9EA,
-    0xEEE1C6,
-    0xF6EB61,
-    0xFFEF00,
-    0xFEDD00,
-    0xFBDB65,
-    0xE0E722,
-    0xFFAD4A,
-    0xEBBC4E,
-    0xEAAA00,
-    0xDA9100,
-    0xCBA135,
-    0x11FFEE,
-    0x8BD3E6,
-    0x05C3DD,
-    0x00B5E2,
-    0x587EDE,
-    0x007C80,
-    0x005EB8,
-    0x0F52BA,
-    0x4D4DFF,
-    0x4B0082,
-    0xFFC600,
-    0xFFB673,
-    0xFFCBA4,
-    0xF4364C,
-    0xFF033E,
-    0xBB0000,
-    0xD8BFD8,
-    0xC724B1,
-    0xBB29BB,
-    0x8031A7
+    // Common room lighting colors according to color temperature
+    0xFF9329,                                                                   // Candle
+    0xFFC58F,                                                                   // tungsten 40w
+    0xFFD6AA,                                                                   // tungsten 100w
+    0xFFF1E0,                                                                   // halogen
+    0xFFFAF4,                                                                   // carbon arc
+    0xFFFFF0,                                                                   // high noon
+    0xFFFFFB,                                                                   // ivory
+    0xFFFFFF,                                                                   // direct sunlight
+    0xC9E2FF,                                                                   // overcast sky
+    0x409CFF,                                                                   // clear blue sky
+
+    // red - pink - orange palette
+    0xF2D68B,                                                                   // color[10]
+    0xEF8A1B,
+    0xED583B,
+    0xF4B8CE,
+    0xEFA8A8,
+    0xE85B94,
+    0xC9245F,
+    0xEF353F,
+    0xBF1D29,
+    0x89030D,
+
+    // green palette
+    0xD4EEEB,
+    0xC6E4D9,
+    0x85D0C6,
+    0x73CDD1,
+    0x00BDAE,
+    0x1194A7,
+    0x10686B,
+    0x597C2B,
+    0x0A5C36,
+    0x14452F,
+
+    // blue - purple palette
+    0xC1E9FC,
+    0x6ACDE6,
+    0x0087BF,
+    0x29338E,
+    0xD69AC8,
+    0xC28DE0,
+    0x9990BA,
+    0x7F4599,
+    0x691D69,
+    0x411E5C,
 };
 
 
 // Variables
-const float         infoVersion         = 1.0;
+const float         infoVersion         = 1.1;
 const char          *infoAuthor         = "mtt4rv1n4";
 const char          *wifiHostname       = "eperly-lite";
 char                wifiSSID[128]       = "";
@@ -224,7 +194,7 @@ bool                ledState            = false;
 uint8_t             redVal              = 0;
 uint8_t             greenVal            = 0;
 uint8_t             blueVal             = 0;
-int                 ledColor            = colorTable[CWHITE];                   // Default color after startup 
+int                 ledColor            = colorTable[7];                        // Default color after startup 
 LEDPattern          ledPattern          = STATIC;                               // Default pattern after startup
 volatile uint8_t    ledIndex            = 0;
 int                 ledBrightnessInc    = 0;
@@ -245,6 +215,8 @@ void led_setToHeartbeat(void);
 
 // Function definitions --> Web Server
 void server_htmlRender(void);
+void render_inactive(void);
+void render_active(void);
 void lamp_on(void);
 void lamp_off(void);
 void increase_brightness(void);
@@ -255,46 +227,7 @@ void increase_blueVal(void);
 void decrease_redVal(void);
 void decrease_greenVal(void);
 void decrease_blueVal(void);
-void color_white(void);
-void color_candle(void);
-void color_tungsten(void);
-void color_ivory(void);
-void color_clearBlueSky(void);
-void color_flourescent(void);
-void color_halogen(void);
-void color_overcastSky(void);
-void color_offWhite(void);
-void color_cream(void);
-void color_butter(void);
-void color_canaryYellow(void);
-void color_bananaYellow(void);
-void color_cheese(void);
-void color_neonYellow(void);
-void color_marigold(void);
-void color_honey(void);
-void color_mustard(void);
-void color_harvestGold(void);
-void color_satinGold(void);
-void color_flourescentBlue(void);
-void color_pastel(void);
-void color_aqua(void);
-void color_skyBlue(void);
-void color_malibuBlue(void);
-void color_tealBlue(void);
-void color_oceanBlue(void);
-void color_sapphireBlue(void);
-void color_neonBlue(void);
-void color_indigo(void);
-void color_amber(void);
-void color_apricot(void);
-void color_peach(void);
-void color_amaranth(void);
-void color_roseRed(void);
-void color_scarlet(void);
-void color_thistle(void);
-void color_neonPurple(void);
-void color_classicPurple(void);
-void color_grape(void);
+void color_set(void);
 
 
 // Function definitions --> EEPROM
@@ -310,7 +243,8 @@ void setup(){
     byte            input;
     unsigned long   prevTime    = 0;
     uint8_t         i2cAddr     = 0;
-
+    uint8_t         index       = 0;
+    String          buf         = "";
 
     Serial.begin(9600);
 
@@ -323,7 +257,7 @@ void setup(){
 
     lcd.drawFastImage(0, 0, 128, 64, logo);
     lcd.display();
-    delay(3000);
+    delay(5000);
 
     lcd.clear();
 
@@ -431,7 +365,7 @@ void setup(){
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifiSSID, wifiPassword);
     while (WiFi.status() != WL_CONNECTED) {
-        delay(250);
+        delay(200);
         Serial.print(".");
     }
     Serial.println("\nWiFi connected.");
@@ -449,47 +383,7 @@ void setup(){
     webServer.on("/on", lamp_on);
     webServer.on("/off", lamp_off);
     webServer.on("/brightness/dec", decrease_brightness);
-    webServer.on("/brightness/inc", increase_brightness);
-    webServer.on("/color/white", color_white);
-    webServer.on("/color/candle", color_candle);
-    webServer.on("/color/tungsten", color_tungsten);
-    webServer.on("/color/ivory", color_ivory);
-    webServer.on("/color/clear_blue_sky", color_clearBlueSky);
-    webServer.on("/color/flourescent", color_flourescent);
-    webServer.on("/color/halogen", color_halogen);
-    webServer.on("/color/overcast_sky", color_overcastSky);
-    webServer.on("/color/off_white", color_offWhite);
-    webServer.on("/color/cream", color_cream);
-    webServer.on("/color/butter", color_butter);
-    webServer.on("/color/canary_yellow", color_canaryYellow);
-    webServer.on("/color/banana_yellow", color_bananaYellow);
-    webServer.on("/color/cheese", color_cheese);
-    webServer.on("/color/neon_yellow", color_neonYellow);
-    webServer.on("/color/marigold", color_marigold);
-    webServer.on("/color/honey", color_honey);
-    webServer.on("/color/mustard", color_mustard);
-    webServer.on("/color/harvest_gold", color_harvestGold);
-    webServer.on("/color/satin_gold", color_satinGold);
-    webServer.on("/color/flourescent_blue", color_flourescentBlue);
-    webServer.on("/color/pastel", color_pastel);
-    webServer.on("/color/aqua", color_aqua);
-    webServer.on("/color/sky_blue", color_skyBlue);
-    webServer.on("/color/malibu_blue", color_malibuBlue);
-    webServer.on("/color/teal_blue", color_tealBlue);
-    webServer.on("/color/ocean_blue", color_oceanBlue);
-    webServer.on("/color/sapphire_blue", color_sapphireBlue);
-    webServer.on("/color/neon_blue", color_neonBlue);
-    webServer.on("/color/indigo", color_indigo);
-    webServer.on("/color/amber", color_amber);
-    webServer.on("/color/apricot", color_apricot);
-    webServer.on("/color/peach", color_peach);
-    webServer.on("/color/amaranth", color_amaranth);
-    webServer.on("/color/rose_red", color_roseRed);
-    webServer.on("/color/scarlet", color_scarlet);
-    webServer.on("/color/thistle", color_thistle);
-    webServer.on("/color/neon_purple", color_neonPurple);
-    webServer.on("/color/classic_purple", color_classicPurple);
-    webServer.on("/color/grape", color_grape);
+    webServer.on("/brightness/inc", increase_brightness);    
     webServer.on("/static", led_setToStatic);
     webServer.on("/rotate", led_setToRotate);
     webServer.on("/heartbeat", led_setToHeartbeat);
@@ -499,6 +393,11 @@ void setup(){
     webServer.on("/r/inc", increase_redVal);
     webServer.on("/g/inc", increase_greenVal);
     webServer.on("/b/inc", increase_blueVal);
+    for (index = 0; index < 40; index++){
+        buf = "color/" + String(index);
+        webServer.on(buf, color_set);
+    }
+
     webServer.begin();
 }
 
@@ -526,215 +425,700 @@ void loop(){
 
     if (timerEn && (ledPattern == HEARTBEAT) && ((millis() - timeStamp) > LED_HEARTBEAT_TRANSITION_DELAY)){
         timeStamp = millis();
-        if (ledBrightnessInc == ledBrightness){
+        if (ledBrightnessInc >= ledBrightness){
+            ledBrightnessInc = ledBrightness;
             heartbeatDir = false;
         }
-        else if (ledBrightnessInc == 0){
+        else if (ledBrightnessInc <= 0){
+            ledBrightnessInc = 0;
             heartbeatDir = true;
         }
         
         if (heartbeatDir){
-            ledBrightnessInc += 1;
+            ledBrightnessInc += 5;
             FastLED.showColor(ledColor, ledBrightnessInc);
+            // FastLED.setBrightness(ledBrightnessInc);
+            // FastLED.show();
+            // FastLED.show();
         }
         else {
-            ledBrightnessInc -= 1;
+            ledBrightnessInc -= 5;
             FastLED.showColor(ledColor, ledBrightnessInc);
+            // FastLED.setBrightness(ledBrightnessInc);
+            // FastLED.show();
+            // FastLED.show();
         }
     }
 }
 
 
 void server_htmlRender(void){
-    String strHtmlContent = "";
-    String strMainSwitch = "";                                                  // for Lamp On/Off button
-    String strPattern = "";                                                     // for LED pattern
-    String strBrightnessVal = "";                                               // Display brightness level
-    String strRVal = "";                                                        // Red value
-    String strGVal = "";                                                        // Red value
-    String strBVal = "";                                                        // Red value
-    String strHtmlHead = R"""(
-<!doctype html><html lang='en'>
-<head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-    <style>
-        body {
-            font-family: 'Rubik', sans-serif;
-            color: #253349;
-        }
-        .centertext {
-            text-align: center;
-        }
-        .text-justify {
-            text-align: justify;
-        }
-        .button-disabled {
-            border: none;
-            background-color: grey;
-            padding: 5px 5px;
-            text-align: center;
-        }
-        .button-enabled1 {
-            border: none;
-            background-color: green;
-            padding: 5px 5px;
-            text-align: center;
-        }
-        .button-enabled2 {
-            border: none;
-            background-color: yellow;
-            padding: 5px 5px;
-            text-align: center;
-        }
-        .button-color {
-            border-width: 2px 2px;
-            padding: 10px 10px;
-        }
-    </style>
-    <title>Eperly - Home</title>
-</head>
-    )""";
-
-    String strH1 = R"""(
-<body>
-    <div class='centertext'><h2>Eperly - Lite</h2><p><small>Version: 1.0</small></p></div><hr>
-    )""";
-
     if (ledState){
-        strMainSwitch = R"""(
-    <div class='centertext'><a href='/off'><button class='button-enabled1' style='font-size: x-large;'>Lamp OFF</button></a></div><hr>
-        )""";
+        render_active();
     }
     else {
-        strMainSwitch = R"""(
-    <div class='centertext'><a href='/on'><button class='button-disabled' style='font-size: x-large;'>Lamp ON</button></a></div><hr>
-        )""";
+        render_inactive();
     }
-    
+}
 
-    switch (ledPattern){
-        case STATIC:
-            strPattern = R"""(
-    <div class='centertext'>
-        <a href='/static'><button class='button-enabled2' style='font-size: large;'>Static</button></a>
-        <a href='/heartbeat'><button class='button-disabled' style='font-size: large;'>Heartbeat</button></a>
-        <a href='/rotate'><button class='button-disabled' style='font-size: large;'>Rotate</button></a>        
-    </div><hr>
-    <div class='centertext'>
-        <a href='/brightness/dec'><button class='button-disabled' style='font-size: large;'>  -  </button></a>
-            )""";
-            break;
-        case HEARTBEAT:
-            strPattern = R"""(
-    <div class='centertext'>
-        <a href='/static'><button class='button-disabled' style='font-size: large;'>Static</button></a>
-        <a href='/heartbeat'><button class='button-enabled2' style='font-size: large;'>Heartbeat</button></a>
-        <a href='/rotate'><button class='button-disabled' style='font-size: large;'>Rotate</button></a>        
-    </div><hr>
-    <div class='centertext'>
-        <a href='/brightness/dec'><button class='button-disabled' style='font-size: large;'>  -  </button></a>
-            )""";
-            break;
-        case ROTATE:
-            strPattern = R"""(
-            <div class='centertext'>
-                <a href='/static'><button class='button-disabled' style='font-size: large;'>Static</button></a>
-                <a href='/heartbeat'><button class='button-disabled' style='font-size: large;'>Heartbeat</button></a>
-                <a href='/rotate'><button class='button-enabled2' style='font-size: large;'>Rotate</button></a>        
-            </div><hr>
-            <div class='centertext'>
-                <a href='/brightness/dec'><button class='button-disabled' style='font-size: large;'>  -  </button></a>
-            )""";
-    }
+void render_inactive(void){
+    const String strHtmlContent = R"""(
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8'/>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
+        <style>
+            :root {
+                --bg-1: rgb(0, 0, 0);
+                --bg-2: rgb( 10, 10, 10);
+                --bg-3: rgb(40, 40, 40);
+                
+                --body-dark-bg1: rgb(0, 0, 0);
+                --body-light-bg1: rgb(230, 172, 118);
 
-    strBrightnessVal = "<button class='button-disabled' style='font-size: large;'> Brightness = " + String(static_cast<int>(100*ledBrightness/LED_MAX_BRIGHTNESS)) + "% </button>";
+                --dark-building0: rgb(43, 3, 43);
+                --dark-building1: rgb(74, 4, 74);
+                --dark-building2: rgb(109, 5, 109);
 
-    String strColorPalette = R"""(
-        <a href='/brightness/inc'><button class='button-disabled' style='font-size: large;'>  +  </button></a>
-    </div><hr>
-    <div class='centertext'>
-        <a href='/color/white'><button class='button-color' style='background-color: #FFE08C;'></button></a>
-        <a href='/color/candle'><button class='button-color' style='background-color: #FF9329;'></button></a>
-        <a href='/color/tungsten'><button class='button-color' style='background-color: #FFD6AA;'></button></a>
-        <a href='/color/ivory'><button class='button-color' style='background-color: #FFFFF0;'></button></a>
-        <a href='/color/clear_blue_sky'><button class='button-color' style='background-color: #409CFF;'></button></a>
-        <a href='/color/flourescent'><button class='button-color' style='background-color: #F4FFFA;'></button></a>
-        <a href='/color/halogen'><button class='button-color' style='background-color: #FFF1E0;'></button></a>
-        <a href='/color/overcast_sky'><button class='button-color' style='background-color: #C9E2FF;'></button></a>
-        <a href='/color/off_white'><button class='button-color' style='background-color: #F2E9EA;'></button></a>
-        <a href='/color/cream'><button class='button-color' style='background-color: #EEE1C6;'></button></a>
-    </div><br>
-    <div class='centertext'>
-        <a href='/color/butter'><button class='button-color' style='background-color: #F6EB61;'></button></a>
-        <a href='/color/canary_yellow'><button class='button-color' style='background-color: #FFEF00;'></button></a>
-        <a href='/color/banana_yellow'><button class='button-color' style='background-color: #FEDD00;'></button></a>
-        <a href='/color/cheese'><button class='button-color' style='background-color: #FBDB65;'></button></a>
-        <a href='/color/neon_yellow'><button class='button-color' style='background-color: #E0E722;'></button></a>
-        <a href='/color/marigold'><button class='button-color' style='background-color: #FFAD4A;'></button></a>
-        <a href='/color/honey'><button class='button-color' style='background-color: #EBBC4E;'></button></a>
-        <a href='/color/mustard'><button class='button-color' style='background-color: #EAAA00;'></button></a>
-        <a href='/color/harvest_gold'><button class='button-color' style='background-color: #DA9100;'></button></a>
-        <a href='/color/satin_gold'><button class='button-color' style='background-color: #CBA135;'></button></a>
-    </div><br>
-    <div class='centertext'>
-        <a href='/color/flourescent_blue'><button class='button-color' style='background-color: #11FFEE;'></button></a>
-        <a href='/color/pastel'><button class='button-color' style='background-color: #8BD3E6;'></button></a>
-        <a href='/color/aqua'><button class='button-color' style='background-color: #05C3DD;'></button></a>
-        <a href='/color/sky_blue'><button class='button-color' style='background-color: #00B5E2;'></button></a>
-        <a href='/color/malibu_blue'><button class='button-color' style='background-color: #587EDE;'></button></a>
-        <a href='/color/teal_blue'><button class='button-color' style='background-color: #007C80;'></button></a>
-        <a href='/color/ocean_blue'><button class='button-color' style='background-color: #005EB8;'></button></a>
-        <a href='/color/sapphire_blue'><button class='button-color' style='background-color: #0F52BA;'></button></a>
-        <a href='/color/neon_blue'><button class='button-color' style='background-color: #4D4DFF;'></button></a>
-        <a href='/color/indigo'><button class='button-color' style='background-color: #4B0082;'></button></a>
-    </div><br>
-    <div class='centertext'>
-        <a href='/color/amber'><button class='button-color' style='background-color: #FFC600;'></button></a>
-        <a href='/color/apricot'><button class='button-color' style='background-color: #FFB673;'></button></a>
-        <a href='/color/peach'><button class='button-color' style='background-color: #FFCBA4;'></button></a>
-        <a href='/color/amaranth'><button class='button-color' style='background-color: #F4364C;'></button></a>
-        <a href='/color/rose_red'><button class='button-color' style='background-color: #FF033E;'></button></a>
-        <a href='/color/scarlet'><button class='button-color' style='background-color: #BB0000;'></button></a>
-        <a href='/color/thistle'><button class='button-color' style='background-color: #D8BFD8;'></button></a>
-        <a href='/color/neon_purple'><button class='button-color' style='background-color: #C724B1;'></button></a>
-        <a href='/color/classic_purple'><button class='button-color' style='background-color: #BB29BB;'></button></a>
-        <a href='/color/grape'><button class='button-color' style='background-color: #8031A7;'></button></a>
-    </div>
-    <hr>
-    <div class='centertext'>
-        <a href='/r/dec'><button class='button-disabled' style='font-size: large;'>  -  </button></a>
-    )""";
-    
-    strRVal = "<button class='button-disabled' style='font-size: large;'> R = " + String(redVal) + " </button>";
-
-    String strBuf1 = R"""(
-        <a href='/r/inc'><button class='button-disabled' style='font-size: large;'>  +  </button></a>
-    </div><hr>
-    <div class='centertext'>
-        <a href='/g/dec'><button class='button-disabled' style='font-size: large;'>  -  </button></a>
-    )""";
-
-    strGVal = "<button class='button-disabled' style='font-size: large;'> G = " + String(greenVal) + " </button>";
-
-    String strBuf2 = R"""(
-        <a href='/g/inc'><button class='button-disabled' style='font-size: large;'>  +  </button></a>
-    </div><hr>
-    <div class='centertext'>
-        <a href='/b/dec'><button class='button-disabled' style='font-size: large;'>  -  </button></a>
-    )""";
-
-    strBVal = "<button class='button-disabled' style='font-size: large;'> B = " + String(blueVal) + " </button>";
-
-    String strBuf3 = R"""(
-        <a href='/b/inc'><button class='button-disabled' style='font-size: large;'>  +  </button></a>
-    </div><hr>
-    <footer class='centertext'><div><small>Powered by: Tarvs' Hobbytronics</small></div></footer>        
+                --light-building0: rgb(90, 56, 35);
+                --light-building1: rgb(130, 78, 46);
+                --light-building2: rgb(191, 121, 78);
+            }
+            body {
+                padding: 0;
+                background: var(--body-dark-bg1);
+                overflow-y: scroll;
+                overflow-x: hidden;
+                display: flex;
+                align-items: center;
+                flex-direction: column;
+                font-family: fantasy, cursive;
+            }
+            #title {
+                color: white;
+                margin-top: 10vh;
+                display: flex;
+                justify-content: center;
+            }
+            #building-container0 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container1 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container2 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-filter {
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-dark-bg1) 90%);
+                position: fixed;
+            }
+            #page-container {
+                display: flex;
+                align-items: center;
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 100vh;
+                position: absolute;
+                margin-top: 10vh;
+                max-height: 100vh;
+            }
+            .slider-container {
+                max-width: 100vh;
+                height: 50vh;
+                margin-top: 35vh;
+                overflow: hidden;
+            }
+            .paletteContainer {
+                max-width: 100vh;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 50px;
+            }
+            .lightBulb-container {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .quantizable {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 20px;
+                margin-bottom: 30px;
+                max-width: 100vh;
+            }
+            button {
+                width: 100px;
+                opacity: 0%;
+                margin-left: 30px;
+                margin-right: 30px;
+                border-radius: 10px;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                font-size: 200%;
+            }
+            .lightBulb {
+                position: relative;
+                min-width: 25vh;
+                min-height: 25vh;
+                background: black;
+                border: 1vh solid white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 300%;
+                color: white;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            a {
+                text-decoration: none;
+            }
+            .predefinedColor {
+                width: 40px;
+                height: 40px;
+                background-color: yellow;
+            }
+            #optionsMenu {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2vh;
+                visibility: hidden;
+            }
+            #colorPicker {
+                width: 100px;
+                height: 50px;
+                border-radius: 5%;
+                border: none;
+                padding: 0;
+                opacity: 0%;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            .optionMenu {
+                width: 100px;
+                height: 30px;
+                font-family: fantasy, cursive;
+                font-size: 100%;
+                /* padding-bottom: 25px; */
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            #building01 {
+                width: 30vh;
+                height: 75vh;
+                background: var(--dark-building0);
+                margin-left: 400px;
+                margin-top: 25vh;
+                position: absolute;
+            }
+            #building02 {
+                width: 15vh;
+                height: 60vh;
+                background: var(--dark-building0);
+                margin-left: 100px;
+                margin-top: 40vh;
+                position: absolute;
+            }
+            #building03 {
+                width: 35vh;
+                height: 70vh;
+                background: var(--dark-building0);
+                margin-left: -350px;
+                margin-top: 30vh;
+                position: absolute;
+            }
+            #building11 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--dark-building1);
+                margin-left: -350px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building12 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--dark-building1);
+                margin-left: -150px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+            #building13 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--dark-building1);
+                margin-left: 400px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building21 {
+                width: 45vh;
+                height: 52vh;
+                background: var(--dark-building2);
+                margin-left: 220px;
+                margin-top: 52vh;
+                position: absolute;
+            }
+            #building22 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--dark-building2);
+                margin-left: -420px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+        </style>
+        <title>Eperly-Lite v1.1</title>
+    </head>
+    <body id='body'>
+        <div id='building-container0'>
+            <div id='building01' class='building'></div>
+            <div id='building02' class='building'></div>
+            <div id='building03' class='building'></div>
+        </div>
+        <div id='building-container1'>
+            <div id='building11' class='building'></div>
+            <div id='building12' class='building'></div>
+            <div id='building13' class='building'></div>
+        </div>
+        <div id='building-container2'>
+            <div id='building21' class='building'></div>
+            <div id='building22' class='building'></div>
+            <div id='building23' class='building'></div>
+        </div>
+        <div id='building-filter'></div>
+        <div id='page-container'>
+            <div class='lightBulb-container'>
+                <a href='/on'><div class='lightBulb'>OFF</div></a>
+            </div>
+            <div id='optionsMenu'>
+                <a href='#0'><button type='button' class='optionMenu'>Static</button></a>
+                <a href='#0'><button type='button' class='optionMenu'>Heartbeat</button></a>
+                <a href='#0'><button type='button' class='optionMenu'>Rotate</button></a>
+            </div>
+        </div>
+        <div class='slider-container'>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Brightness</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Red</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Green</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Blue</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+        </div>
+    </body>
 </html>
     )""";
-
-    strHtmlContent = strHtmlHead + strH1 + strMainSwitch + strPattern + strBrightnessVal + strColorPalette + strRVal + strBuf1 + strGVal + strBuf2 + strBVal + strBuf3;
     webServer.send(200, "text/html", strHtmlContent);
 }
 
+
+void render_active(void){
+    const String strHtmlContent = R"""(
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8'/>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
+        <style>
+            :root {
+                --bg-1: rgb(0, 0, 0);
+                --bg-2: rgb( 10, 10, 10);
+                --bg-3: rgb(40, 40, 40);
+                
+                --body-dark-bg1: rgb(0, 0, 0);
+                --body-light-bg1: rgb(230, 172, 118);
+
+                --dark-building0: rgb(43, 3, 43);
+                --dark-building1: rgb(74, 4, 74);
+                --dark-building2: rgb(109, 5, 109);
+
+                --light-building0: rgb(90, 56, 35);
+                --light-building1: rgb(130, 78, 46);
+                --light-building2: rgb(191, 121, 78);
+            }
+            body {
+                padding: 0;
+                background: var(--body-light-bg1);
+                overflow-y: scroll;
+                overflow-x: hidden;
+                display: flex;
+                align-items: center;
+                flex-direction: column;
+                font-family: fantasy, cursive;
+            }
+            #title {
+                color: black;
+                margin-top: 10vh;
+                display: flex;
+                justify-content: center;
+            }
+            #building-container0 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container1 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container2 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-filter {
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-light-bg1) 90%);
+                position: fixed;
+            }
+            #page-container {
+                display: flex;
+                align-items: center;
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 100vh;
+                position: absolute;
+                margin-top: 10vh;
+                max-height: 100vh;
+            }
+            .slider-container {
+                max-width: 100vh;
+                height: 50vh;
+                margin-top: 40vh;
+                overflow: visible;
+                z-index: 2;
+                color: black;
+            }
+            .paletteContainer {
+                max-width: 100vh;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 50px;
+            }
+            .lightBulb-container {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                /* overflow: hidden; */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .quantizable {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 20px;
+                margin-bottom: 30px;
+                max-width: 100vh;
+            }
+            button {
+                width: 100px;
+                opacity: 100%;
+                margin-left: 30px;
+                margin-right: 30px;
+                border-radius: 10px;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                font-size: 200%;
+            }
+            .adjustBtn {
+                width: 100px;
+                opacity: 100%;
+                margin-left: 30px;
+                margin-right: 30px;
+                border-radius: 10px;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                font-size: 200%;
+            }
+            .lightBulb {
+                position: relative;
+                min-width: 25vh;
+                min-height: 25vh;
+                background: white;
+                border: 1vh solid black;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 300%;
+                color: black;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            a {
+                text-decoration: none;
+            }
+            .predefinedColor {
+                width: 40px;
+                height: 40px;
+                background-color: yellow;
+            }
+            #optionsMenu {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2vh;
+                visibility: visible;
+            }
+            #colorPicker {
+                width: 100px;
+                height: 50px;
+                border-radius: 5%;
+                border: none;
+                padding: 0;
+                opacity: 100%;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            #fineTuneBtn {
+                display: flex;
+                opacity: 100%;
+                justify-content: space-between;
+                margin-top: 20px;
+                margin-bottom: 30px;
+                max-width: 100vh;
+            }
+            .optionMenu {
+                width: 100px;
+                height: 30px;
+                font-family: fantasy, cursive;
+                font-size: 100%;
+                /* padding-bottom: 25px; */
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            #building01 {
+                width: 30vh;
+                height: 75vh;
+                background: var(--light-building0);
+                margin-left: 400px;
+                margin-top: 25vh;
+                position: absolute;
+            }
+            #building02 {
+                width: 15vh;
+                height: 60vh;
+                background: var(--light-building0);
+                margin-left: 100px;
+                margin-top: 40vh;
+                position: absolute;
+            }
+            #building03 {
+                width: 35vh;
+                height: 70vh;
+                background: var(--light-building0);
+                margin-left: -350px;
+                margin-top: 30vh;
+                position: absolute;
+            }
+            #building11 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--light-building1);
+                margin-left: -350px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building12 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--light-building1);
+                margin-left: -150px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+            #building13 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--light-building1);
+                margin-left: 400px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building21 {
+                width: 45vh;
+                height: 52vh;
+                background: var(--light-building2);
+                margin-left: 220px;
+                margin-top: 52vh;
+                position: absolute;
+            }
+            #building22 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--light-building2);
+                margin-left: -420px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+            .paletteContainer {
+                max-width: 55vh;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 50px;
+                z-index: 3;
+            }
+            .predefinedColor {
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            .predefinedColor:hover {
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                scale: 120%;
+            }
+        </style>
+        <title>Eperly-Lite v1.1</title>
+    </head>
+    <body id='body'>
+        <div id='title'>
+            Eperly-Lite
+        </div>
+
+        <div id='building-container0'>
+            <div id='building01' class='building'></div>
+            <div id='building02' class='building'></div>
+            <div id='building03' class='building'></div>
+        </div>
+
+        <div id='building-container1'>
+            <div id='building11' class='building'></div>
+            <div id='building12' class='building'></div>
+            <div id='building13' class='building'></div>
+        </div>
+
+        <div id='building-container2'>
+            <div id='building21' class='building'></div>
+            <div id='building22' class='building'></div>
+            <div id='building23' class='building'></div>
+        </div>
+
+        <div id='building-filter'></div>
+
+        <div id='page-container'>
+            <div id='lightBulb-container' class='lightBulb-container'>
+                <a href='/off'><div id='lightBulb' class='lightBulb'>ON</div></a>
+            </div>
+            <div id='optionsMenu'>
+                <a href='/static'><button type='button' class='optionMenu'>Static</button></a>
+                <a href='/heartbeat'><button type='button' class='optionMenu'>Heartbeat</button></a>
+                <a href='/rotate'><button type='button' class='optionMenu'>Rotate</button></a>
+            </div>
+        </div>
+
+        <div class='slider-container'>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/brightness/dec'><button class='adjustBtn'>-</button></a>
+                <p>Brightness</p>
+                <a href='/brightness/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/r/dec'><button class='adjustBtn'>-</button></a>
+                <p>Red</p>
+                <a href='/r/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/g/dec'><button class='adjustBtn'>-</button></a>
+                <p>Green</p>
+                <a href='/g/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/b/dec'><button class='adjustBtn'>-</button></a>
+                <p>Blue</p>
+                <a href='/b/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+        </div>
+        <div class="paletteContainer">
+            <a href='/color/0'><div class="predefinedColor" style="background-color: #FF9329;"></div></a>
+            <a href='/color/1'><div class="predefinedColor" style="background-color: #FFC58F;"></div></a>
+            <a href='/color/2'><div class="predefinedColor" style="background-color: #FFD6AA;"></div></a>
+            <a href='/color/3'><div class="predefinedColor" style="background-color: #FFF1E0;"></div></a>
+            <a href='/color/4'><div class="predefinedColor" style="background-color: #FFFAF4;"></div></a>
+            <a href='/color/5'><div class="predefinedColor" style="background-color: #FFFFF0;"></div></a>
+            <a href='/color/6'><div class="predefinedColor" style="background-color: #FFFFFB;"></div></a>
+            <a href='/color/7'><div class="predefinedColor" style="background-color: #FFFFFF;"></div></a>
+            <a href='/color/8'><div class="predefinedColor" style="background-color: #C9E2FF;"></div></a>
+            <a href='/color/9'><div class="predefinedColor" style="background-color: #409CFF;"></div></a>
+            <a href='/color/10'><div class="predefinedColor" style="background-color: #F2D68B;"></div></a>
+            <a href='/color/11'><div class="predefinedColor" style="background-color: #EF8A1B;"></div></a>
+            <a href='/color/12'><div class="predefinedColor" style="background-color: #ED583B;"></div></a>
+            <a href='/color/13'><div class="predefinedColor" style="background-color: #F4B8CE;"></div></a>
+            <a href='/color/14'><div class="predefinedColor" style="background-color: #EFA8A8;"></div></a>
+            <a href='/color/15'><div class="predefinedColor" style="background-color: #E85B94;"></div></a>
+            <a href='/color/16'><div class="predefinedColor" style="background-color: #C9245F;"></div></a>
+            <a href='/color/17'><div class="predefinedColor" style="background-color: #EF353F;"></div></a>
+            <a href='/color/18'><div class="predefinedColor" style="background-color: #BF1D29;"></div></a>
+            <a href='/color/19'><div class="predefinedColor" style="background-color: #89030D;"></div></a>
+            <a href='/color/20'><div class="predefinedColor" style="background-color: #D4EEEB;"></div></a>
+            <a href='/color/21'><div class="predefinedColor" style="background-color: #C6E4D9;"></div></a>
+            <a href='/color/22'><div class="predefinedColor" style="background-color: #85D0C6;"></div></a>
+            <a href='/color/23'><div class="predefinedColor" style="background-color: #73CDD1;"></div></a>
+            <a href='/color/24'><div class="predefinedColor" style="background-color: #00BDAE;"></div></a>
+            <a href='/color/25'><div class="predefinedColor" style="background-color: #1194A7;"></div></a>
+            <a href='/color/26'><div class="predefinedColor" style="background-color: #10686B;"></div></a>
+            <a href='/color/27'><div class="predefinedColor" style="background-color: #597C2B;"></div></a>
+            <a href='/color/28'><div class="predefinedColor" style="background-color: #0A5C36;"></div></a>
+            <a href='/color/29'><div class="predefinedColor" style="background-color: #14452F;"></div></a>
+            <a href='/color/30'><div class="predefinedColor" style="background-color: #C1E9FC;"></div></a>
+            <a href='/color/31'><div class="predefinedColor" style="background-color: #6ACDE6;"></div></a>
+            <a href='/color/32'><div class="predefinedColor" style="background-color: #0087BF;"></div></a>
+            <a href='/color/33'><div class="predefinedColor" style="background-color: #29338E;"></div></a>
+            <a href='/color/34'><div class="predefinedColor" style="background-color: #D69AC8;"></div></a>
+            <a href='/color/35'><div class="predefinedColor" style="background-color: #C28DE0;"></div></a>
+            <a href='/color/36'><div class="predefinedColor" style="background-color: #9990BA;"></div></a>
+            <a href='/color/37'><div class="predefinedColor" style="background-color: #7F4599;"></div></a>
+            <a href='/color/38'><div class="predefinedColor" style="background-color: #691D69;"></div></a>
+            <a href='/color/39'><div class="predefinedColor" style="background-color: #411E5C;"></div></a>
+        </div>
+    </body>
+</html>
+    )""";
+    webServer.send(200, "text/html", strHtmlContent);
+}
 
 void lamp_on(void){
     ledState = true;
@@ -770,14 +1154,11 @@ void lamp_off(void){
 
 void increase_brightness(void){
     if (ledState){
-        ledBrightness += 5;
+        ledBrightness += LED_BRIGHTNESS_INCREMENT;
         if (ledBrightness > LED_MAX_BRIGHTNESS){
             ledBrightness = LED_MAX_BRIGHTNESS;
         }
-        if (ledPattern == STATIC){
-            FastLED.showColor(ledColor, ledBrightness);
-        }
-        else if (ledPattern == ROTATE){
+        if ((ledPattern == STATIC) || (ledPattern == ROTATE)){
             FastLED.setBrightness(ledBrightness);
             FastLED.show();
             FastLED.show();
@@ -789,14 +1170,11 @@ void increase_brightness(void){
 
 void decrease_brightness(void){
     if (ledState){
-        ledBrightness -= 5;
-        if (ledBrightness < 1){
-            ledBrightness = 1;
+        ledBrightness -= LED_BRIGHTNESS_INCREMENT;
+        if (ledBrightness < LED_MIN_BRIGHTNESS){
+            ledBrightness = LED_MIN_BRIGHTNESS;
         }
-        if (ledPattern == STATIC){
-            FastLED.showColor(ledColor, ledBrightness);
-        }
-        else if (ledPattern == ROTATE){
+        if ((ledPattern == STATIC) || (ledPattern == ROTATE)){
             FastLED.setBrightness(ledBrightness);
             FastLED.show();
             FastLED.show();
@@ -827,243 +1205,19 @@ void led_setColor(void){
 }
 
 
-void color_white(void){
-    ledColor = colorTable[CWHITE];
+void color_set(void){
+    uint8_t     index;
+    String      hyperlink = webServer.uri();
+
+    index = 39;
+    while (index >= 0){
+        if (hyperlink.indexOf(String(index)) >= 0){
+            break;
+        }
+        index -= 1;
+    }
+    ledColor = colorTable[index];
     led_setColor();        
-}
-
-
-void color_candle(void){
-    ledColor = colorTable[CANDLE];
-    led_setColor();
-}
-
-
-void color_tungsten(void){
-    ledColor = colorTable[TUNGSTEN];
-    led_setColor();
-}
-
-
-void color_ivory(void){
-    ledColor = colorTable[IVORY];
-    led_setColor();
-}
-
-
-void color_clearBlueSky(void){
-    ledColor = colorTable[CLEAR_BLUE_SKY];
-    led_setColor();
-}
-
-
-void color_flourescent(void){
-    ledColor = colorTable[FLOURESCENT];
-    led_setColor();
-}
-
-
-void color_halogen(void){
-    ledColor = colorTable[HALOGEN];
-    led_setColor();
-}
-
-
-void color_overcastSky(void){
-    ledColor = colorTable[OVERCAST_SKY];
-    led_setColor();
-}
-
-
-void color_offWhite(void){
-    ledColor = colorTable[OFF_WHITE];
-    led_setColor();
-}
-
-
-void color_cream(void){
-    ledColor = colorTable[CREAM];
-    led_setColor();
-}
-
-
-void color_butter(void){
-    ledColor = colorTable[BUTTER];
-    led_setColor();
-}
-
-
-void color_canaryYellow(void){
-    ledColor = colorTable[CANARY_YELLOW];
-    led_setColor();
-}
-
-
-void color_bananaYellow(void){
-    ledColor = colorTable[BANANA_YELLOW];
-    led_setColor();
-}
-
-
-void color_cheese(void){
-    ledColor = colorTable[CHEESE];
-    led_setColor();
-}
-
-
-void color_neonYellow(void){
-    ledColor = colorTable[NEON_YELLOW];
-    led_setColor();
-}
-
-
-void color_marigold(void){
-    ledColor = colorTable[MARIGOLD];
-    led_setColor();
-}
-
-
-void color_honey(void){
-    ledColor = colorTable[HONEY];
-    led_setColor();
-}
-
-
-void color_mustard(void){
-    ledColor = colorTable[MUSTARD];
-    led_setColor();
-}
-
-
-void color_harvestGold(void){
-    ledColor = colorTable[HARVEST_GOLD];
-    led_setColor();
-}
-
-
-void color_satinGold(void){
-    ledColor = colorTable[SATIN_GOLD];
-    led_setColor();
-}
-
-
-void color_flourescentBlue(void){
-    ledColor = colorTable[FLOURESCENT_BLUE];
-    led_setColor();
-}
-
-
-void color_pastel(void){
-    ledColor = colorTable[PASTEL];
-    led_setColor();
-}
-
-
-void color_aqua(void){
-    ledColor = colorTable[AQUA];
-    led_setColor();
-}
-
-
-void color_skyBlue(void){
-    ledColor = colorTable[SKY_BLUE];
-    led_setColor();
-}
-
-
-void color_malibuBlue(void){
-    ledColor = colorTable[MALIBU_BLUE];
-    led_setColor();
-}
-
-
-void color_tealBlue(void){
-    ledColor = colorTable[TEAL_BLUE];
-    led_setColor();
-}
-
-
-void color_oceanBlue(void){
-    ledColor = colorTable[OCEAN_BLUE];
-    led_setColor();
-}
-
-
-void color_sapphireBlue(void){
-    ledColor = colorTable[SAPPHIRE_BLUE];
-    led_setColor();
-}
-
-
-void color_neonBlue(void){
-    ledColor = colorTable[NEON_BLUE];
-    led_setColor();
-}
-
-
-void color_indigo(void){
-    ledColor = colorTable[INDIGO];
-    led_setColor();
-}
-
-
-void color_amber(void){
-    ledColor = colorTable[AMBER];
-    led_setColor();
-}
-
-
-void color_apricot(void){
-    ledColor = colorTable[APRICOT];
-    led_setColor();
-}
-
-
-void color_peach(void){
-    ledColor = colorTable[PEACH];
-    led_setColor();
-}
-
-
-void color_amaranth(void){
-    ledColor = colorTable[AMARANTH];
-    led_setColor();
-}
-
-
-void color_roseRed(void){
-    ledColor = colorTable[ROSE_RED];
-    led_setColor();
-}
-
-
-void color_scarlet(void){
-    ledColor = colorTable[SCARLET];
-    led_setColor();
-}
-
-
-void color_thistle(void){
-    ledColor = colorTable[THISTLE];
-    led_setColor();
-}
-
-
-void color_neonPurple(void){
-    ledColor = colorTable[NEON_PURPLE];
-    led_setColor();
-}
-
-
-void color_classicPurple(void){
-    ledColor = colorTable[CLASSIC_PURPLE];
-    led_setColor();
-}
-
-
-void color_grape(void){
-    ledColor = colorTable[GRAPE];
-    led_setColor();
 }
 
 
@@ -1078,7 +1232,6 @@ void led_setToStatic(void){
     else {
         server_htmlRender();
     }
-    
 }
 
 
@@ -1103,7 +1256,7 @@ void led_setToRotate(void){
 void led_setToHeartbeat(void){
     if (ledState){
         ledPattern = HEARTBEAT;
-        ledBrightnessInc = 0;
+        ledBrightnessInc = ledBrightness;
         FastLED.showColor(ledColor, ledBrightnessInc);
         timerEn = true;
         timeStamp = millis();
@@ -1113,7 +1266,7 @@ void led_setToHeartbeat(void){
 
 
 void increase_redVal(void){
-    redVal += 1;
+    redVal += LED_COLOR_TUNE_INCREMENT;
     if (redVal > 255){
         redVal = 255;
     }
@@ -1123,7 +1276,7 @@ void increase_redVal(void){
 
 
 void increase_greenVal(void){
-    greenVal += 1;
+    greenVal += LED_COLOR_TUNE_INCREMENT;
     if (greenVal > 255){
         greenVal = 255;
     }
@@ -1133,7 +1286,7 @@ void increase_greenVal(void){
 
 
 void increase_blueVal(void){
-    blueVal += 1;
+    blueVal += LED_COLOR_TUNE_INCREMENT;
     if (blueVal > 255){
         blueVal = 255;
     }
@@ -1143,7 +1296,7 @@ void increase_blueVal(void){
 
 
 void decrease_redVal(void){
-    redVal -= 1;
+    redVal -= LED_COLOR_TUNE_INCREMENT;
     if (redVal < 0){
         redVal = 0;
     }
@@ -1153,7 +1306,7 @@ void decrease_redVal(void){
 
 
 void decrease_greenVal(void){
-    greenVal -= 1;
+    greenVal -= LED_COLOR_TUNE_INCREMENT;
     if (greenVal < 0){
         greenVal = 0;
     }
@@ -1163,7 +1316,7 @@ void decrease_greenVal(void){
 
 
 void decrease_blueVal(void){
-    blueVal -= 1;
+    blueVal -= LED_COLOR_TUNE_INCREMENT;
     if (blueVal < 0){
         blueVal = 0;
     }

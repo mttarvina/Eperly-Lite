@@ -1,0 +1,654 @@
+<!-- *********************************************************************** -->
+<!-- ***************************** ON ************************************** -->
+<!-- *********************************************************************** -->
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8'/>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
+        <style>
+            :root {
+                --bg-1: rgb(0, 0, 0);
+                --bg-2: rgb( 10, 10, 10);
+                --bg-3: rgb(40, 40, 40);
+                
+                --body-dark-bg1: rgb(0, 0, 0);
+                --body-light-bg1: rgb(230, 172, 118);
+
+                --dark-building0: rgb(43, 3, 43);
+                --dark-building1: rgb(74, 4, 74);
+                --dark-building2: rgb(109, 5, 109);
+
+                --light-building0: rgb(90, 56, 35);
+                --light-building1: rgb(130, 78, 46);
+                --light-building2: rgb(191, 121, 78);
+            }
+            body {
+                padding: 0;
+                background: var(--body-light-bg1);
+                overflow-y: scroll;
+                overflow-x: hidden;
+                display: flex;
+                align-items: center;
+                flex-direction: column;
+                font-family: fantasy, cursive;
+            }
+            #title {
+                color: black;
+                margin-top: 10vh;
+                display: flex;
+                justify-content: center;
+            }
+            #building-container0 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container1 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container2 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-filter {
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-light-bg1) 90%);
+                position: fixed;
+            }
+            #page-container {
+                display: flex;
+                align-items: center;
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 100vh;
+                position: absolute;
+                margin-top: 10vh;
+                max-height: 100vh;
+            }
+            .slider-container {
+                max-width: 100vh;
+                height: 50vh;
+                margin-top: 40vh;
+                overflow: visible;
+                z-index: 2;
+                color: black;
+            }
+            .paletteContainer {
+                max-width: 100vh;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 50px;
+            }
+            .lightBulb-container {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                /* overflow: hidden; */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .quantizable {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 20px;
+                margin-bottom: 30px;
+                max-width: 100vh;
+            }
+            button {
+                width: 100px;
+                opacity: 100%;
+                margin-left: 30px;
+                margin-right: 30px;
+                border-radius: 10px;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                font-size: 200%;
+            }
+            .adjustBtn {
+                width: 100px;
+                opacity: 100%;
+                margin-left: 30px;
+                margin-right: 30px;
+                border-radius: 10px;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                font-size: 200%;
+            }
+            .lightBulb {
+                position: relative;
+                min-width: 25vh;
+                min-height: 25vh;
+                background: white;
+                border: 1vh solid black;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 300%;
+                color: black;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            a {
+                text-decoration: none;
+            }
+            .predefinedColor {
+                width: 40px;
+                height: 40px;
+                background-color: yellow;
+            }
+            #optionsMenu {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2vh;
+                visibility: visible;
+            }
+            #colorPicker {
+                width: 100px;
+                height: 50px;
+                border-radius: 5%;
+                border: none;
+                padding: 0;
+                opacity: 100%;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            #fineTuneBtn {
+                display: flex;
+                opacity: 100%;
+                justify-content: space-between;
+                margin-top: 20px;
+                margin-bottom: 30px;
+                max-width: 100vh;
+            }
+            .optionMenu {
+                width: 100px;
+                height: 30px;
+                font-family: fantasy, cursive;
+                font-size: 100%;
+                /* padding-bottom: 25px; */
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            #building01 {
+                width: 30vh;
+                height: 75vh;
+                background: var(--light-building0);
+                margin-left: 400px;
+                margin-top: 25vh;
+                position: absolute;
+            }
+            #building02 {
+                width: 15vh;
+                height: 60vh;
+                background: var(--light-building0);
+                margin-left: 100px;
+                margin-top: 40vh;
+                position: absolute;
+            }
+            #building03 {
+                width: 35vh;
+                height: 70vh;
+                background: var(--light-building0);
+                margin-left: -350px;
+                margin-top: 30vh;
+                position: absolute;
+            }
+            #building11 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--light-building1);
+                margin-left: -350px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building12 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--light-building1);
+                margin-left: -150px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+            #building13 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--light-building1);
+                margin-left: 400px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building21 {
+                width: 45vh;
+                height: 52vh;
+                background: var(--light-building2);
+                margin-left: 220px;
+                margin-top: 52vh;
+                position: absolute;
+            }
+            #building22 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--light-building2);
+                margin-left: -420px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+            .paletteContainer {
+                max-width: 55vh;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 50px;
+                z-index: 3;
+            }
+            .predefinedColor {
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            .predefinedColor:hover {
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                scale: 120%;
+            }
+        </style>
+        <title>Eperly-Lite v1.1</title>
+    </head>
+    <body id='body'>
+        <div id='title'>
+            Eperly-Lite
+        </div>
+
+        <div id='building-container0'>
+            <div id='building01' class='building'></div>
+            <div id='building02' class='building'></div>
+            <div id='building03' class='building'></div>
+        </div>
+
+        <div id='building-container1'>
+            <div id='building11' class='building'></div>
+            <div id='building12' class='building'></div>
+            <div id='building13' class='building'></div>
+        </div>
+
+        <div id='building-container2'>
+            <div id='building21' class='building'></div>
+            <div id='building22' class='building'></div>
+            <div id='building23' class='building'></div>
+        </div>
+
+        <div id='building-filter'></div>
+
+        <div id='page-container'>
+            <div id='lightBulb-container' class='lightBulb-container'>
+                <a href='/off'><div id='lightBulb' class='lightBulb'>ON</div></a>
+            </div>
+            <div id='optionsMenu'>
+                <a href='/static'><button type='button' class='optionMenu'>Static</button></a>
+                <a href='/heartbeat'><button type='button' class='optionMenu'>Heartbeat</button></a>
+                <a href='/rotate'><button type='button' class='optionMenu'>Rotate</button></a>
+            </div>
+        </div>
+
+        <div class='slider-container'>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/brightness/dec'><button class='adjustBtn'>-</button></a>
+                <p>Brightness</p>
+                <a href='/brightness/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/r/dec'><button class='adjustBtn'>-</button></a>
+                <p>Red</p>
+                <a href='/r/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/g/dec'><button class='adjustBtn'>-</button></a>
+                <p>Green</p>
+                <a href='/g/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='/b/dec'><button class='adjustBtn'>-</button></a>
+                <p>Blue</p>
+                <a href='/b/inc'><button class='adjustBtn'>+</button></a>
+            </div>
+        </div>
+        <div class="paletteContainer">
+            <a href='/color/0'><div class="predefinedColor" style="background-color: #FF9329;"></div></a>
+            <a href='/color/1'><div class="predefinedColor" style="background-color: #FFC58F;"></div></a>
+            <a href='/color/2'><div class="predefinedColor" style="background-color: #FFD6AA;"></div></a>
+            <a href='/color/3'><div class="predefinedColor" style="background-color: #FFF1E0;"></div></a>
+            <a href='/color/4'><div class="predefinedColor" style="background-color: #FFFAF4;"></div></a>
+            <a href='/color/5'><div class="predefinedColor" style="background-color: #FFFFF0;"></div></a>
+            <a href='/color/6'><div class="predefinedColor" style="background-color: #FFFFFB;"></div></a>
+            <a href='/color/7'><div class="predefinedColor" style="background-color: #FFFFFF;"></div></a>
+            <a href='/color/8'><div class="predefinedColor" style="background-color: #C9E2FF;"></div></a>
+            <a href='/color/9'><div class="predefinedColor" style="background-color: #409CFF;"></div></a>
+            <a href='/color/10'><div class="predefinedColor" style="background-color: #F2D68B;"></div></a>
+            <a href='/color/11'><div class="predefinedColor" style="background-color: #EF8A1B;"></div></a>
+            <a href='/color/12'><div class="predefinedColor" style="background-color: #ED583B;"></div></a>
+            <a href='/color/13'><div class="predefinedColor" style="background-color: #F4B8CE;"></div></a>
+            <a href='/color/14'><div class="predefinedColor" style="background-color: #EFA8A8;"></div></a>
+            <a href='/color/15'><div class="predefinedColor" style="background-color: #E85B94;"></div></a>
+            <a href='/color/16'><div class="predefinedColor" style="background-color: #C9245F;"></div></a>
+            <a href='/color/17'><div class="predefinedColor" style="background-color: #EF353F;"></div></a>
+            <a href='/color/18'><div class="predefinedColor" style="background-color: #BF1D29;"></div></a>
+            <a href='/color/19'><div class="predefinedColor" style="background-color: #89030D;"></div></a>
+            <a href='/color/20'><div class="predefinedColor" style="background-color: #D4EEEB;"></div></a>
+            <a href='/color/21'><div class="predefinedColor" style="background-color: #C6E4D9;"></div></a>
+            <a href='/color/22'><div class="predefinedColor" style="background-color: #85D0C6;"></div></a>
+            <a href='/color/23'><div class="predefinedColor" style="background-color: #73CDD1;"></div></a>
+            <a href='/color/24'><div class="predefinedColor" style="background-color: #00BDAE;"></div></a>
+            <a href='/color/25'><div class="predefinedColor" style="background-color: #1194A7;"></div></a>
+            <a href='/color/26'><div class="predefinedColor" style="background-color: #10686B;"></div></a>
+            <a href='/color/27'><div class="predefinedColor" style="background-color: #597C2B;"></div></a>
+            <a href='/color/28'><div class="predefinedColor" style="background-color: #0A5C36;"></div></a>
+            <a href='/color/29'><div class="predefinedColor" style="background-color: #14452F;"></div></a>
+            <a href='/color/30'><div class="predefinedColor" style="background-color: #C1E9FC;"></div></a>
+            <a href='/color/31'><div class="predefinedColor" style="background-color: #6ACDE6;"></div></a>
+            <a href='/color/32'><div class="predefinedColor" style="background-color: #0087BF;"></div></a>
+            <a href='/color/33'><div class="predefinedColor" style="background-color: #29338E;"></div></a>
+            <a href='/color/34'><div class="predefinedColor" style="background-color: #D69AC8;"></div></a>
+            <a href='/color/35'><div class="predefinedColor" style="background-color: #C28DE0;"></div></a>
+            <a href='/color/36'><div class="predefinedColor" style="background-color: #9990BA;"></div></a>
+            <a href='/color/37'><div class="predefinedColor" style="background-color: #7F4599;"></div></a>
+            <a href='/color/38'><div class="predefinedColor" style="background-color: #691D69;"></div></a>
+            <a href='/color/39'><div class="predefinedColor" style="background-color: #411E5C;"></div></a>
+        </div>
+    </body>
+</html>
+
+
+<!-- *********************************************************************** -->
+<!-- ***************************** OFF ************************************* -->
+<!-- *********************************************************************** -->
+<!-- <!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8'/>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
+        <style>
+            :root {
+                --bg-1: rgb(0, 0, 0);
+                --bg-2: rgb( 10, 10, 10);
+                --bg-3: rgb(40, 40, 40);
+                
+                --body-dark-bg1: rgb(0, 0, 0);
+                --body-light-bg1: rgb(230, 172, 118);
+
+                --dark-building0: rgb(43, 3, 43);
+                --dark-building1: rgb(74, 4, 74);
+                --dark-building2: rgb(109, 5, 109);
+
+                --light-building0: rgb(90, 56, 35);
+                --light-building1: rgb(130, 78, 46);
+                --light-building2: rgb(191, 121, 78);
+            }
+            body {
+                padding: 0;
+                background: var(--body-dark-bg1);
+                overflow-y: scroll;
+                overflow-x: hidden;
+                display: flex;
+                align-items: center;
+                flex-direction: column;
+                font-family: fantasy, cursive;
+            }
+            #title {
+                color: white;
+                margin-top: 10vh;
+                display: flex;
+                justify-content: center;
+            }
+            #building-container0 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container1 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-container2 {
+                width: 100vw;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                position: fixed;
+            }
+            #building-filter {
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-dark-bg1) 90%);
+                position: fixed;
+            }
+            #page-container {
+                display: flex;
+                align-items: center;
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 100vh;
+                position: absolute;
+                margin-top: 10vh;
+                max-height: 100vh;
+            }
+            .slider-container {
+                max-width: 100vh;
+                height: 50vh;
+                margin-top: 35vh;
+                overflow: hidden;
+            }
+            .paletteContainer {
+                max-width: 100vh;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin: 50px;
+            }
+            .lightBulb-container {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .quantizable {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 20px;
+                margin-bottom: 30px;
+                max-width: 100vh;
+            }
+            button {
+                width: 100px;
+                opacity: 0%;
+                margin-left: 30px;
+                margin-right: 30px;
+                border-radius: 10px;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+                font-size: 200%;
+            }
+            .lightBulb {
+                position: relative;
+                min-width: 25vh;
+                min-height: 25vh;
+                background: black;
+                border: 1vh solid white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 300%;
+                color: white;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            a {
+                text-decoration: none;
+            }
+            .predefinedColor {
+                width: 40px;
+                height: 40px;
+                background-color: yellow;
+            }
+            #optionsMenu {
+                max-width: 30vh;
+                height: 30vh;
+                margin-top: 5vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2vh;
+                visibility: hidden;
+            }
+            #colorPicker {
+                width: 100px;
+                height: 50px;
+                border-radius: 5%;
+                border: none;
+                padding: 0;
+                opacity: 0%;
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            .optionMenu {
+                width: 100px;
+                height: 30px;
+                font-family: fantasy, cursive;
+                font-size: 100%;
+                /* padding-bottom: 25px; */
+                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+            }
+            #building01 {
+                width: 30vh;
+                height: 75vh;
+                background: var(--dark-building0);
+                margin-left: 400px;
+                margin-top: 25vh;
+                position: absolute;
+            }
+            #building02 {
+                width: 15vh;
+                height: 60vh;
+                background: var(--dark-building0);
+                margin-left: 100px;
+                margin-top: 40vh;
+                position: absolute;
+            }
+            #building03 {
+                width: 35vh;
+                height: 70vh;
+                background: var(--dark-building0);
+                margin-left: -350px;
+                margin-top: 30vh;
+                position: absolute;
+            }
+            #building11 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--dark-building1);
+                margin-left: -350px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building12 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--dark-building1);
+                margin-left: -150px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+            #building13 {
+                width: 15vh;
+                height: 55vh;
+                background: var(--dark-building1);
+                margin-left: 400px;
+                margin-top: 45vh;
+                position: absolute;
+            }
+            #building21 {
+                width: 45vh;
+                height: 52vh;
+                background: var(--dark-building2);
+                margin-left: 220px;
+                margin-top: 52vh;
+                position: absolute;
+            }
+            #building22 {
+                width: 15vh;
+                height: 50vh;
+                background: var(--dark-building2);
+                margin-left: -420px;
+                margin-top: 50vh;
+                position: absolute;
+            }
+        </style>
+        <title>Eperly-Lite v1.1</title>
+    </head>
+    <body id='body'>
+        <div id='building-container0'>
+            <div id='building01' class='building'></div>
+            <div id='building02' class='building'></div>
+            <div id='building03' class='building'></div>
+        </div>
+        <div id='building-container1'>
+            <div id='building11' class='building'></div>
+            <div id='building12' class='building'></div>
+            <div id='building13' class='building'></div>
+        </div>
+        <div id='building-container2'>
+            <div id='building21' class='building'></div>
+            <div id='building22' class='building'></div>
+            <div id='building23' class='building'></div>
+        </div>
+        <div id='building-filter'></div>
+        <div id='page-container'>
+            <div class='lightBulb-container'>
+                <a href='/on'><div class='lightBulb'>OFF</div></a>
+            </div>
+            <div id='optionsMenu'>
+                <a href='#0'><button type='button' class='optionMenu'>Static</button></a>
+                <a href='#0'><button type='button' class='optionMenu'>Heartbeat</button></a>
+                <a href='#0'><button type='button' class='optionMenu'>Rotate</button></a>
+            </div>
+        </div>
+        <div class='slider-container'>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Brightness</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Red</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Green</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+            <div id='fineTuneBtn' class='quantizable'>
+                <a href='#0'><button class='adjustBtn'>-</button></a>
+                <p>Blue</p>
+                <a href='#0'><button class='adjustBtn'>+</button></a>
+            </div>
+        </div>
+    </body>
+</html> -->
