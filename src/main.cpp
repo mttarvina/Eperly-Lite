@@ -18,6 +18,7 @@
 //      + Increased wait time for logo display from 3secs to 5secs
 //      + Increased LED brightness adjustment increment from 5 to 25
 //      + Increase LED heartbeat transition delay from 25ms to 50ms
+//      + Increase LED heartbeat brightness increment from 1 to 2
 //      + Increase LED color adjustment (r,g,b values) increment from 1 to 5
 //      + Updated color palette
 //      + Modified the approach when changing LED color
@@ -45,10 +46,11 @@
 #define LED_MIN_BRIGHTNESS              15
 #define LED_NUM                         8                                       // 8 LEDs in Neopixel ring
 #define LED_PIN                         D1                                      // D5
-#define LED_ROTATE_TRANSITION_DELAY     120                                     // (ms)
-#define LED_HEARTBEAT_TRANSITION_DELAY  50                                      // (ms)
-#define LED_BRIGHTNESS_INCREMENT        25
-#define LED_COLOR_TUNE_INCREMENT        5                                      
+#define LED_ROT_TRANS_DELAY             120                                     // (ms)
+#define LED_HRTBT_TRANS_DELAY           50                                      // (ms)
+#define LED_HRTBT_BRIGHTNESS_INC        2                                       
+#define LED_BRIGHTNESS_INC              25
+#define LED_COLOR_TUNE_INC              5                                      
 #define EEPROM_SIZE                     259                                     // 3 character indicators + 256 bytes for wifi ssid and password
 #define LCD_SDA_PIN                     D5
 #define LCD_SCL_PIN                     D6
@@ -243,8 +245,13 @@ void setup(){
     byte            input;
     unsigned long   prevTime    = 0;
     uint8_t         i2cAddr     = 0;
-    uint8_t         index       = 0;
     String          buf         = "";
+
+    FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, LED_NUM);                          // GRB ordering is assumed
+    FastLED.setCorrection(TypicalSMD5050);
+    FastLED.setDither(BINARY_DITHER);
+    FastLED.showColor(CRGB::Black, LED_MAX_BRIGHTNESS);                         // set all LEDs to Black
+    FastLED.showColor(CRGB::Black, LED_MAX_BRIGHTNESS);                         // set all LEDs to Black
 
     Serial.begin(9600);
 
@@ -347,12 +354,6 @@ void setup(){
             }
         }
     }
-
-    FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, LED_NUM);                          // GRB ordering is assumed
-    FastLED.setCorrection(TypicalSMD5050);
-    FastLED.setDither(BINARY_DITHER);
-    FastLED.showColor(CRGB::Black, LED_MAX_BRIGHTNESS);                         // set all LEDs to Black
-    FastLED.showColor(CRGB::Black, LED_MAX_BRIGHTNESS);                         // set all LEDs to Black
     
     // Connect to WiFi
     Serial.print("\nConnecting to ");
@@ -393,11 +394,46 @@ void setup(){
     webServer.on("/r/inc", increase_redVal);
     webServer.on("/g/inc", increase_greenVal);
     webServer.on("/b/inc", increase_blueVal);
-    for (index = 0; index < 40; index++){
-        buf = "color/" + String(index);
-        webServer.on(buf, color_set);
-    }
-
+    webServer.on("/color/0", color_set);
+    webServer.on("/color/1", color_set);
+    webServer.on("/color/2", color_set);
+    webServer.on("/color/3", color_set);
+    webServer.on("/color/4", color_set);
+    webServer.on("/color/5", color_set);
+    webServer.on("/color/6", color_set);
+    webServer.on("/color/7", color_set);
+    webServer.on("/color/8", color_set);
+    webServer.on("/color/9", color_set);
+    webServer.on("/color/10", color_set);
+    webServer.on("/color/11", color_set);
+    webServer.on("/color/12", color_set);
+    webServer.on("/color/13", color_set);
+    webServer.on("/color/14", color_set);
+    webServer.on("/color/15", color_set);
+    webServer.on("/color/16", color_set);
+    webServer.on("/color/17", color_set);
+    webServer.on("/color/18", color_set);
+    webServer.on("/color/19", color_set);
+    webServer.on("/color/20", color_set);
+    webServer.on("/color/21", color_set);
+    webServer.on("/color/22", color_set);
+    webServer.on("/color/23", color_set);
+    webServer.on("/color/24", color_set);
+    webServer.on("/color/25", color_set);
+    webServer.on("/color/26", color_set);
+    webServer.on("/color/27", color_set);
+    webServer.on("/color/28", color_set);
+    webServer.on("/color/29", color_set);
+    webServer.on("/color/30", color_set);
+    webServer.on("/color/31", color_set);
+    webServer.on("/color/32", color_set);
+    webServer.on("/color/33", color_set);
+    webServer.on("/color/34", color_set);
+    webServer.on("/color/35", color_set);
+    webServer.on("/color/36", color_set);
+    webServer.on("/color/37", color_set);
+    webServer.on("/color/38", color_set);
+    webServer.on("/color/39", color_set);
     webServer.begin();
 }
 
@@ -405,7 +441,7 @@ void setup(){
 void loop(){
     webServer.handleClient();
 
-    if (timerEn && (ledPattern == ROTATE) && ((millis() - timeStamp) > LED_ROTATE_TRANSITION_DELAY)){
+    if (timerEn && (ledPattern == ROTATE) && ((millis() - timeStamp) > LED_ROT_TRANS_DELAY)){
         timeStamp = millis();
         ledIndex += 1;
         if (ledIndex == LED_NUM){
@@ -423,8 +459,14 @@ void loop(){
         FastLED.show();
     }
 
-    if (timerEn && (ledPattern == HEARTBEAT) && ((millis() - timeStamp) > LED_HEARTBEAT_TRANSITION_DELAY)){
+    if (timerEn && (ledPattern == HEARTBEAT) && ((millis() - timeStamp) > LED_HRTBT_TRANS_DELAY)){
         timeStamp = millis();
+        if (heartbeatDir){
+            ledBrightnessInc += LED_HRTBT_BRIGHTNESS_INC;
+        }
+        else {
+            ledBrightnessInc -= LED_HRTBT_BRIGHTNESS_INC;
+        }
         if (ledBrightnessInc >= ledBrightness){
             ledBrightnessInc = ledBrightness;
             heartbeatDir = false;
@@ -433,21 +475,7 @@ void loop(){
             ledBrightnessInc = 0;
             heartbeatDir = true;
         }
-        
-        if (heartbeatDir){
-            ledBrightnessInc += 5;
-            FastLED.showColor(ledColor, ledBrightnessInc);
-            // FastLED.setBrightness(ledBrightnessInc);
-            // FastLED.show();
-            // FastLED.show();
-        }
-        else {
-            ledBrightnessInc -= 5;
-            FastLED.showColor(ledColor, ledBrightnessInc);
-            // FastLED.setBrightness(ledBrightnessInc);
-            // FastLED.show();
-            // FastLED.show();
-        }
+        FastLED.showColor(ledColor, ledBrightnessInc);
     }
 }
 
@@ -462,286 +490,229 @@ void server_htmlRender(void){
 }
 
 void render_inactive(void){
-    const String strHtmlContent = R"""(
+    String strHtmlContent = R"""(
 <!DOCTYPE html>
 <html lang='en'>
-    <head>
-        <meta charset='UTF-8'/>
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
-        <style>
-            :root {
-                --bg-1: rgb(0, 0, 0);
-                --bg-2: rgb( 10, 10, 10);
-                --bg-3: rgb(40, 40, 40);
-                
-                --body-dark-bg1: rgb(0, 0, 0);
-                --body-light-bg1: rgb(230, 172, 118);
+<head>
+<meta charset='UTF-8'/>
+<meta name='viewport' content='width=device-width, initial-scale=0.75'/>
+<style>
+:root {
+--bg-1: rgb(0, 0, 0);
+--bg-2: rgb(10, 10, 10);
+--bg-3: rgb(40, 40, 40);
 
-                --dark-building0: rgb(43, 3, 43);
-                --dark-building1: rgb(74, 4, 74);
-                --dark-building2: rgb(109, 5, 109);
+--body-dark-bg1: rgb(0, 0, 0);
+--body-light-bg1: rgb(230, 172, 118);
 
-                --light-building0: rgb(90, 56, 35);
-                --light-building1: rgb(130, 78, 46);
-                --light-building2: rgb(191, 121, 78);
-            }
-            body {
-                padding: 0;
-                background: var(--body-dark-bg1);
-                overflow-y: scroll;
-                overflow-x: hidden;
-                display: flex;
-                align-items: center;
-                flex-direction: column;
-                font-family: fantasy, cursive;
-            }
-            #title {
-                color: white;
-                margin-top: 10vh;
-                display: flex;
-                justify-content: center;
-            }
-            #building-container0 {
-                width: 100vw;
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                position: fixed;
-            }
-            #building-container1 {
-                width: 100vw;
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                position: fixed;
-            }
-            #building-container2 {
-                width: 100vw;
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                position: fixed;
-            }
-            #building-filter {
-                width: 100vw;
-                height: 100vh;
-                background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-dark-bg1) 90%);
-                position: fixed;
-            }
-            #page-container {
-                display: flex;
-                align-items: center;
-                flex-direction: row;
-                flex-wrap: wrap;
-                max-width: 100vh;
-                position: absolute;
-                margin-top: 10vh;
-                max-height: 100vh;
-            }
-            .slider-container {
-                max-width: 100vh;
-                height: 50vh;
-                margin-top: 35vh;
-                overflow: hidden;
-            }
-            .paletteContainer {
-                max-width: 100vh;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin: 50px;
-            }
-            .lightBulb-container {
-                max-width: 30vh;
-                height: 30vh;
-                margin-top: 5vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .quantizable {
-                display: flex;
-                justify-content: space-between;
-                margin-top: 20px;
-                margin-bottom: 30px;
-                max-width: 100vh;
-            }
-            button {
-                width: 100px;
-                opacity: 0%;
-                margin-left: 30px;
-                margin-right: 30px;
-                border-radius: 10px;
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-                font-size: 200%;
-            }
-            .lightBulb {
-                position: relative;
-                min-width: 25vh;
-                min-height: 25vh;
-                background: black;
-                border: 1vh solid white;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 300%;
-                color: white;
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-            }
-            a {
-                text-decoration: none;
-            }
-            .predefinedColor {
-                width: 40px;
-                height: 40px;
-                background-color: yellow;
-            }
-            #optionsMenu {
-                max-width: 30vh;
-                height: 30vh;
-                margin-top: 5vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 2vh;
-                visibility: hidden;
-            }
-            #colorPicker {
-                width: 100px;
-                height: 50px;
-                border-radius: 5%;
-                border: none;
-                padding: 0;
-                opacity: 0%;
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-            }
-            .optionMenu {
-                width: 100px;
-                height: 30px;
-                font-family: fantasy, cursive;
-                font-size: 100%;
-                /* padding-bottom: 25px; */
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-            }
-            #building01 {
-                width: 30vh;
-                height: 75vh;
-                background: var(--dark-building0);
-                margin-left: 400px;
-                margin-top: 25vh;
-                position: absolute;
-            }
-            #building02 {
-                width: 15vh;
-                height: 60vh;
-                background: var(--dark-building0);
-                margin-left: 100px;
-                margin-top: 40vh;
-                position: absolute;
-            }
-            #building03 {
-                width: 35vh;
-                height: 70vh;
-                background: var(--dark-building0);
-                margin-left: -350px;
-                margin-top: 30vh;
-                position: absolute;
-            }
-            #building11 {
-                width: 15vh;
-                height: 55vh;
-                background: var(--dark-building1);
-                margin-left: -350px;
-                margin-top: 45vh;
-                position: absolute;
-            }
-            #building12 {
-                width: 15vh;
-                height: 50vh;
-                background: var(--dark-building1);
-                margin-left: -150px;
-                margin-top: 50vh;
-                position: absolute;
-            }
-            #building13 {
-                width: 15vh;
-                height: 55vh;
-                background: var(--dark-building1);
-                margin-left: 400px;
-                margin-top: 45vh;
-                position: absolute;
-            }
-            #building21 {
-                width: 45vh;
-                height: 52vh;
-                background: var(--dark-building2);
-                margin-left: 220px;
-                margin-top: 52vh;
-                position: absolute;
-            }
-            #building22 {
-                width: 15vh;
-                height: 50vh;
-                background: var(--dark-building2);
-                margin-left: -420px;
-                margin-top: 50vh;
-                position: absolute;
-            }
-        </style>
-        <title>Eperly-Lite v1.1</title>
-    </head>
-    <body id='body'>
-        <div id='building-container0'>
-            <div id='building01' class='building'></div>
-            <div id='building02' class='building'></div>
-            <div id='building03' class='building'></div>
-        </div>
-        <div id='building-container1'>
-            <div id='building11' class='building'></div>
-            <div id='building12' class='building'></div>
-            <div id='building13' class='building'></div>
-        </div>
-        <div id='building-container2'>
-            <div id='building21' class='building'></div>
-            <div id='building22' class='building'></div>
-            <div id='building23' class='building'></div>
-        </div>
-        <div id='building-filter'></div>
-        <div id='page-container'>
-            <div class='lightBulb-container'>
-                <a href='/on'><div class='lightBulb'>OFF</div></a>
-            </div>
-            <div id='optionsMenu'>
-                <a href='#0'><button type='button' class='optionMenu'>Static</button></a>
-                <a href='#0'><button type='button' class='optionMenu'>Heartbeat</button></a>
-                <a href='#0'><button type='button' class='optionMenu'>Rotate</button></a>
-            </div>
-        </div>
-        <div class='slider-container'>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='#0'><button class='adjustBtn'>-</button></a>
-                <p>Brightness</p>
-                <a href='#0'><button class='adjustBtn'>+</button></a>
-            </div>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='#0'><button class='adjustBtn'>-</button></a>
-                <p>Red</p>
-                <a href='#0'><button class='adjustBtn'>+</button></a>
-            </div>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='#0'><button class='adjustBtn'>-</button></a>
-                <p>Green</p>
-                <a href='#0'><button class='adjustBtn'>+</button></a>
-            </div>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='#0'><button class='adjustBtn'>-</button></a>
-                <p>Blue</p>
-                <a href='#0'><button class='adjustBtn'>+</button></a>
-            </div>
-        </div>
-    </body>
+--dark-building0: rgb(43, 3, 43);
+--dark-building1: rgb(74, 4, 74);
+--dark-building2: rgb(109, 5, 109);
+
+--light-building0: rgb(90, 56, 35);
+--light-building1: rgb(130, 78, 46);
+--light-building2: rgb(191, 121, 78);
+}
+body {
+padding: 0;
+background: var(--body-dark-bg1);
+overflow-y: scroll;
+overflow-x: hidden;
+display: flex;
+align-items: center;
+flex-direction: column;
+font-family: fantasy, cursive;
+}
+#title {
+color: white;
+margin-top: 10vh;
+display: flex;
+justify-content: center;
+}
+#building-container0 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-container1 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-container2 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-filter {
+width: 100vw;
+height: 100vh;
+background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-dark-bg1) 90%);
+position: fixed;
+}
+#page-container {
+display: flex;
+align-items: center;
+flex-direction: row;
+flex-wrap: wrap;
+max-width: 100vh;
+position: absolute;
+margin-top: 10vh;
+max-height: 100vh;
+}
+.lightBulb-container {
+max-width: 30vh;
+height: 30vh;
+margin-top: 5vh;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.quantizable {
+display: flex;
+justify-content: space-between;
+margin-top: 20px;
+margin-bottom: 30px;
+max-width: 100vh;
+}
+button {
+width: 100px;
+opacity: 0%;
+margin-left: 30px;
+margin-right: 30px;
+border-radius: 10px;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+font-size: 200%;
+}
+.lightBulb {
+position: relative;
+min-width: 25vh;
+min-height: 25vh;
+background: black;
+border: 1vh solid white;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 300%;
+color: white;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+}
+a {
+text-decoration: none;
+}
+#optionsMenu {
+max-width: 30vh;
+height: 30vh;
+margin-top: 5vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 2vh;
+visibility: hidden;
+}
+#building01 {
+width: 30vh;
+height: 75vh;
+background: var(--dark-building0);
+margin-left: 400px;
+margin-top: 25vh;
+position: absolute;
+}
+#building02 {
+width: 15vh;
+height: 60vh;
+background: var(--dark-building0);
+margin-left: 100px;
+margin-top: 40vh;
+position: absolute;
+}
+#building03 {
+width: 35vh;
+height: 70vh;
+background: var(--dark-building0);
+margin-left: -350px;
+margin-top: 30vh;
+position: absolute;
+}
+#building11 {
+width: 15vh;
+height: 55vh;
+background: var(--dark-building1);
+margin-left: -350px;
+margin-top: 45vh;
+position: absolute;
+}
+#building12 {
+width: 15vh;
+height: 50vh;
+background: var(--dark-building1);
+margin-left: -150px;
+margin-top: 50vh;
+position: absolute;
+}
+#building13 {
+width: 15vh;
+height: 55vh;
+background: var(--dark-building1);
+margin-left: 400px;
+margin-top: 45vh;
+position: absolute;
+}
+#building21 {
+width: 45vh;
+height: 52vh;
+background: var(--dark-building2);
+margin-left: 220px;
+margin-top: 52vh;
+position: absolute;
+}
+#building22 {
+width: 15vh;
+height: 50vh;
+background: var(--dark-building2);
+margin-left: -420px;
+margin-top: 50vh;
+position: absolute;
+}
+</style>
+<title>Eperly-Lite v1.1</title>
+</head>
+<body id='body'>
+<div id='building-container0'>
+<div id='building01' class='building'></div>
+<div id='building02' class='building'></div>
+<div id='building03' class='building'></div>
+</div>
+<div id='building-container1'>
+<div id='building11' class='building'></div>
+<div id='building12' class='building'></div>
+<div id='building13' class='building'></div>
+</div>
+<div id='building-container2'>
+<div id='building21' class='building'></div>
+<div id='building22' class='building'></div>
+<div id='building23' class='building'></div>
+</div>
+<div id='building-filter'></div>
+<div id='page-container'>
+<div class='lightBulb-container'>
+<a href='/on'><div class='lightBulb'>OFF</div></a>
+</div>
+<div id='optionsMenu'>
+<button type='button' class='optionMenu'>Static</button>
+<button type='button' class='optionMenu'>Heartbeat</button>
+<button type='button' class='optionMenu'>Rotate</button>
+</div>
+</div>
+</body>
 </html>
     )""";
     webServer.send(200, "text/html", strHtmlContent);
@@ -749,372 +720,350 @@ void render_inactive(void){
 
 
 void render_active(void){
-    const String strHtmlContent = R"""(
+    String strHtmlContent = R"""(
 <!DOCTYPE html>
 <html lang='en'>
-    <head>
-        <meta charset='UTF-8'/>
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
-        <style>
-            :root {
-                --bg-1: rgb(0, 0, 0);
-                --bg-2: rgb( 10, 10, 10);
-                --bg-3: rgb(40, 40, 40);
-                
-                --body-dark-bg1: rgb(0, 0, 0);
-                --body-light-bg1: rgb(230, 172, 118);
+<head>
+<meta charset='UTF-8'/>
+<meta name='viewport' content='width=device-width, initial-scale=0.75'/>
+<style>
+:root {
+--bg-1: rgb(0, 0, 0);
+--bg-2: rgb( 10, 10, 10);
+--bg-3: rgb(40, 40, 40);
 
-                --dark-building0: rgb(43, 3, 43);
-                --dark-building1: rgb(74, 4, 74);
-                --dark-building2: rgb(109, 5, 109);
+--body-dark-bg1: rgb(0, 0, 0);
+--body-light-bg1: rgb(230, 172, 118);
 
-                --light-building0: rgb(90, 56, 35);
-                --light-building1: rgb(130, 78, 46);
-                --light-building2: rgb(191, 121, 78);
-            }
-            body {
-                padding: 0;
-                background: var(--body-light-bg1);
-                overflow-y: scroll;
-                overflow-x: hidden;
-                display: flex;
-                align-items: center;
-                flex-direction: column;
-                font-family: fantasy, cursive;
-            }
-            #title {
-                color: black;
-                margin-top: 10vh;
-                display: flex;
-                justify-content: center;
-            }
-            #building-container0 {
-                width: 100vw;
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                position: fixed;
-            }
-            #building-container1 {
-                width: 100vw;
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                position: fixed;
-            }
-            #building-container2 {
-                width: 100vw;
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                position: fixed;
-            }
-            #building-filter {
-                width: 100vw;
-                height: 100vh;
-                background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-light-bg1) 90%);
-                position: fixed;
-            }
-            #page-container {
-                display: flex;
-                align-items: center;
-                flex-direction: row;
-                flex-wrap: wrap;
-                max-width: 100vh;
-                position: absolute;
-                margin-top: 10vh;
-                max-height: 100vh;
-            }
-            .slider-container {
-                max-width: 100vh;
-                height: 50vh;
-                margin-top: 40vh;
-                overflow: visible;
-                z-index: 2;
-                color: black;
-            }
-            .paletteContainer {
-                max-width: 100vh;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin: 50px;
-            }
-            .lightBulb-container {
-                max-width: 30vh;
-                height: 30vh;
-                margin-top: 5vh;
-                /* overflow: hidden; */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .quantizable {
-                display: flex;
-                justify-content: space-between;
-                margin-top: 20px;
-                margin-bottom: 30px;
-                max-width: 100vh;
-            }
-            button {
-                width: 100px;
-                opacity: 100%;
-                margin-left: 30px;
-                margin-right: 30px;
-                border-radius: 10px;
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-                font-size: 200%;
-            }
-            .adjustBtn {
-                width: 100px;
-                opacity: 100%;
-                margin-left: 30px;
-                margin-right: 30px;
-                border-radius: 10px;
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-                font-size: 200%;
-            }
-            .lightBulb {
-                position: relative;
-                min-width: 25vh;
-                min-height: 25vh;
-                background: white;
-                border: 1vh solid black;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 300%;
-                color: black;
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-            }
-            a {
-                text-decoration: none;
-            }
-            .predefinedColor {
-                width: 40px;
-                height: 40px;
-                background-color: yellow;
-            }
-            #optionsMenu {
-                max-width: 30vh;
-                height: 30vh;
-                margin-top: 5vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 2vh;
-                visibility: visible;
-            }
-            #colorPicker {
-                width: 100px;
-                height: 50px;
-                border-radius: 5%;
-                border: none;
-                padding: 0;
-                opacity: 100%;
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-            }
-            #fineTuneBtn {
-                display: flex;
-                opacity: 100%;
-                justify-content: space-between;
-                margin-top: 20px;
-                margin-bottom: 30px;
-                max-width: 100vh;
-            }
-            .optionMenu {
-                width: 100px;
-                height: 30px;
-                font-family: fantasy, cursive;
-                font-size: 100%;
-                /* padding-bottom: 25px; */
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-            }
-            #building01 {
-                width: 30vh;
-                height: 75vh;
-                background: var(--light-building0);
-                margin-left: 400px;
-                margin-top: 25vh;
-                position: absolute;
-            }
-            #building02 {
-                width: 15vh;
-                height: 60vh;
-                background: var(--light-building0);
-                margin-left: 100px;
-                margin-top: 40vh;
-                position: absolute;
-            }
-            #building03 {
-                width: 35vh;
-                height: 70vh;
-                background: var(--light-building0);
-                margin-left: -350px;
-                margin-top: 30vh;
-                position: absolute;
-            }
-            #building11 {
-                width: 15vh;
-                height: 55vh;
-                background: var(--light-building1);
-                margin-left: -350px;
-                margin-top: 45vh;
-                position: absolute;
-            }
-            #building12 {
-                width: 15vh;
-                height: 50vh;
-                background: var(--light-building1);
-                margin-left: -150px;
-                margin-top: 50vh;
-                position: absolute;
-            }
-            #building13 {
-                width: 15vh;
-                height: 55vh;
-                background: var(--light-building1);
-                margin-left: 400px;
-                margin-top: 45vh;
-                position: absolute;
-            }
-            #building21 {
-                width: 45vh;
-                height: 52vh;
-                background: var(--light-building2);
-                margin-left: 220px;
-                margin-top: 52vh;
-                position: absolute;
-            }
-            #building22 {
-                width: 15vh;
-                height: 50vh;
-                background: var(--light-building2);
-                margin-left: -420px;
-                margin-top: 50vh;
-                position: absolute;
-            }
-            .paletteContainer {
-                max-width: 55vh;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin: 50px;
-                z-index: 3;
-            }
-            .predefinedColor {
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-            }
-            .predefinedColor:hover {
-                box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
-                scale: 120%;
-            }
-        </style>
-        <title>Eperly-Lite v1.1</title>
-    </head>
-    <body id='body'>
-        <div id='title'>
-            Eperly-Lite
-        </div>
+--dark-building0: rgb(43, 3, 43);
+--dark-building1: rgb(74, 4, 74);
+--dark-building2: rgb(109, 5, 109);
 
-        <div id='building-container0'>
-            <div id='building01' class='building'></div>
-            <div id='building02' class='building'></div>
-            <div id='building03' class='building'></div>
-        </div>
+--light-building0: rgb(90, 56, 35);
+--light-building1: rgb(130, 78, 46);
+--light-building2: rgb(191, 121, 78);
+}
+body {
+padding: 0;
+background: var(--body-light-bg1);
+overflow-y: scroll;
+overflow-x: hidden;
+display: flex;
+align-items: center;
+flex-direction: column;
+font-family: fantasy, cursive;
+}
+#title {
+color: black;
+margin-top: 10vh;
+display: flex;
+justify-content: center;
+}
+#building-container0 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-container1 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-container2 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-filter {
+width: 100vw;
+height: 100vh;
+background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-light-bg1) 90%);
+position: fixed;
+}
+#page-container {
+display: flex;
+align-items: center;
+flex-direction: row;
+flex-wrap: wrap;
+max-width: 100vh;
+position: absolute;
+margin-top: 10vh;
+max-height: 100vh;
+}
+.slider-container {
+max-width: 100vh;
+height: 50vh;
+margin-top: 40vh;
+overflow: visible;
+z-index: 2;
+color: black;
+}
+.paletteContainer {
+max-width: 100vh;
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+margin: 50px;
+}
+.lightBulb-container {
+max-width: 30vh;
+height: 30vh;
+margin-top: 5vh;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.quantizable {
+display: flex;
+justify-content: space-between;
+margin-top: 20px;
+margin-bottom: 30px;
+max-width: 100vh;
+}
+button {
+width: 100px;
+opacity: 100%;
+margin-left: 30px;
+margin-right: 30px;
+border-radius: 10px;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+font-size: 200%;
+}
+button:hover {
+scale: 120%;
+}
+.paletteContainer {
+margin-left: 0px;
+margin-top: 0px;
+display: grid;
+grid-template-columns: 35px 35px 35px 35px 35px 35px 35px 35px 35px 35px;
+z-index: 1;
+}
+.colorBtn {
+height: 35px;
+width: 35px;
+}
+.adjustBtn {
+width: 100px;
+opacity: 100%;
+margin-left: 30px;
+margin-right: 30px;
+border-radius: 10px;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+font-size: 200%;
+}
+.lightBulb {
+position: relative;
+min-width: 25vh;
+min-height: 25vh;
+background: white;
+border: 1vh solid black;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 300%;
+color: black;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+}
+a {
+text-decoration: none;
+}
+#optionsMenu {
+max-width: 30vh;
+height: 30vh;
+margin-top: 5vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 2vh;
+visibility: visible;
+}
+#fineTuneBtn {
+display: flex;
+opacity: 100%;
+justify-content: space-between;
+margin-top: 20px;
+margin-bottom: 30px;
+max-width: 100vh;
+}
+.optionMenu {
+width: 100px;
+height: 30px;
+font-family: fantasy, cursive;
+font-size: 100%;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+}
+#building01 {
+width: 30vh;
+height: 75vh;
+background: var(--light-building0);
+margin-left: 400px;
+margin-top: 25vh;
+position: absolute;
+}
+#building02 {
+width: 15vh;
+height: 60vh;
+background: var(--light-building0);
+margin-left: 100px;
+margin-top: 40vh;
+position: absolute;
+}
+#building03 {
+width: 35vh;
+height: 70vh;
+background: var(--light-building0);
+margin-left: -350px;
+margin-top: 30vh;
+position: absolute;
+}
+#building11 {
+width: 15vh;
+height: 55vh;
+background: var(--light-building1);
+margin-left: -350px;
+margin-top: 45vh;
+position: absolute;
+}
+#building12 {
+width: 15vh;
+height: 50vh;
+background: var(--light-building1);
+margin-left: -150px;
+margin-top: 50vh;
+position: absolute;
+}
+#building13 {
+width: 15vh;
+height: 55vh;
+background: var(--light-building1);
+margin-left: 400px;
+margin-top: 45vh;
+position: absolute;
+}
+#building21 {
+width: 45vh;
+height: 52vh;
+background: var(--light-building2);
+margin-left: 220px;
+margin-top: 52vh;
+position: absolute;
+}
+#building22 {
+width: 15vh;
+height: 50vh;
+background: var(--light-building2);
+margin-left: -420px;
+margin-top: 50vh;
+position: absolute;
+}
+</style>
+<title>Eperly-Lite v1.1</title>
+</head>
+<body id='body'>
+<div id='title'>
+Eperly-Lite v1.1
+</div>
 
-        <div id='building-container1'>
-            <div id='building11' class='building'></div>
-            <div id='building12' class='building'></div>
-            <div id='building13' class='building'></div>
-        </div>
-
-        <div id='building-container2'>
-            <div id='building21' class='building'></div>
-            <div id='building22' class='building'></div>
-            <div id='building23' class='building'></div>
-        </div>
-
-        <div id='building-filter'></div>
-
-        <div id='page-container'>
-            <div id='lightBulb-container' class='lightBulb-container'>
-                <a href='/off'><div id='lightBulb' class='lightBulb'>ON</div></a>
-            </div>
-            <div id='optionsMenu'>
-                <a href='/static'><button type='button' class='optionMenu'>Static</button></a>
-                <a href='/heartbeat'><button type='button' class='optionMenu'>Heartbeat</button></a>
-                <a href='/rotate'><button type='button' class='optionMenu'>Rotate</button></a>
-            </div>
-        </div>
-
-        <div class='slider-container'>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='/brightness/dec'><button class='adjustBtn'>-</button></a>
-                <p>Brightness</p>
-                <a href='/brightness/inc'><button class='adjustBtn'>+</button></a>
-            </div>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='/r/dec'><button class='adjustBtn'>-</button></a>
-                <p>Red</p>
-                <a href='/r/inc'><button class='adjustBtn'>+</button></a>
-            </div>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='/g/dec'><button class='adjustBtn'>-</button></a>
-                <p>Green</p>
-                <a href='/g/inc'><button class='adjustBtn'>+</button></a>
-            </div>
-            <div id='fineTuneBtn' class='quantizable'>
-                <a href='/b/dec'><button class='adjustBtn'>-</button></a>
-                <p>Blue</p>
-                <a href='/b/inc'><button class='adjustBtn'>+</button></a>
-            </div>
-        </div>
-        <div class="paletteContainer">
-            <a href='/color/0'><div class="predefinedColor" style="background-color: #FF9329;"></div></a>
-            <a href='/color/1'><div class="predefinedColor" style="background-color: #FFC58F;"></div></a>
-            <a href='/color/2'><div class="predefinedColor" style="background-color: #FFD6AA;"></div></a>
-            <a href='/color/3'><div class="predefinedColor" style="background-color: #FFF1E0;"></div></a>
-            <a href='/color/4'><div class="predefinedColor" style="background-color: #FFFAF4;"></div></a>
-            <a href='/color/5'><div class="predefinedColor" style="background-color: #FFFFF0;"></div></a>
-            <a href='/color/6'><div class="predefinedColor" style="background-color: #FFFFFB;"></div></a>
-            <a href='/color/7'><div class="predefinedColor" style="background-color: #FFFFFF;"></div></a>
-            <a href='/color/8'><div class="predefinedColor" style="background-color: #C9E2FF;"></div></a>
-            <a href='/color/9'><div class="predefinedColor" style="background-color: #409CFF;"></div></a>
-            <a href='/color/10'><div class="predefinedColor" style="background-color: #F2D68B;"></div></a>
-            <a href='/color/11'><div class="predefinedColor" style="background-color: #EF8A1B;"></div></a>
-            <a href='/color/12'><div class="predefinedColor" style="background-color: #ED583B;"></div></a>
-            <a href='/color/13'><div class="predefinedColor" style="background-color: #F4B8CE;"></div></a>
-            <a href='/color/14'><div class="predefinedColor" style="background-color: #EFA8A8;"></div></a>
-            <a href='/color/15'><div class="predefinedColor" style="background-color: #E85B94;"></div></a>
-            <a href='/color/16'><div class="predefinedColor" style="background-color: #C9245F;"></div></a>
-            <a href='/color/17'><div class="predefinedColor" style="background-color: #EF353F;"></div></a>
-            <a href='/color/18'><div class="predefinedColor" style="background-color: #BF1D29;"></div></a>
-            <a href='/color/19'><div class="predefinedColor" style="background-color: #89030D;"></div></a>
-            <a href='/color/20'><div class="predefinedColor" style="background-color: #D4EEEB;"></div></a>
-            <a href='/color/21'><div class="predefinedColor" style="background-color: #C6E4D9;"></div></a>
-            <a href='/color/22'><div class="predefinedColor" style="background-color: #85D0C6;"></div></a>
-            <a href='/color/23'><div class="predefinedColor" style="background-color: #73CDD1;"></div></a>
-            <a href='/color/24'><div class="predefinedColor" style="background-color: #00BDAE;"></div></a>
-            <a href='/color/25'><div class="predefinedColor" style="background-color: #1194A7;"></div></a>
-            <a href='/color/26'><div class="predefinedColor" style="background-color: #10686B;"></div></a>
-            <a href='/color/27'><div class="predefinedColor" style="background-color: #597C2B;"></div></a>
-            <a href='/color/28'><div class="predefinedColor" style="background-color: #0A5C36;"></div></a>
-            <a href='/color/29'><div class="predefinedColor" style="background-color: #14452F;"></div></a>
-            <a href='/color/30'><div class="predefinedColor" style="background-color: #C1E9FC;"></div></a>
-            <a href='/color/31'><div class="predefinedColor" style="background-color: #6ACDE6;"></div></a>
-            <a href='/color/32'><div class="predefinedColor" style="background-color: #0087BF;"></div></a>
-            <a href='/color/33'><div class="predefinedColor" style="background-color: #29338E;"></div></a>
-            <a href='/color/34'><div class="predefinedColor" style="background-color: #D69AC8;"></div></a>
-            <a href='/color/35'><div class="predefinedColor" style="background-color: #C28DE0;"></div></a>
-            <a href='/color/36'><div class="predefinedColor" style="background-color: #9990BA;"></div></a>
-            <a href='/color/37'><div class="predefinedColor" style="background-color: #7F4599;"></div></a>
-            <a href='/color/38'><div class="predefinedColor" style="background-color: #691D69;"></div></a>
-            <a href='/color/39'><div class="predefinedColor" style="background-color: #411E5C;"></div></a>
-        </div>
-    </body>
+<div id='building-container0'>
+<div id='building01' class='building'></div>
+<div id='building02' class='building'></div>
+<div id='building03' class='building'></div>
+</div>
+<div id='building-container1'>
+<div id='building11' class='building'></div>
+<div id='building12' class='building'></div>
+<div id='building13' class='building'></div>
+</div>
+<div id='building-container2'>
+<div id='building21' class='building'></div>
+<div id='building22' class='building'></div>
+<div id='building23' class='building'></div>
+</div>
+<div id='building-filter'></div>
+<div id='page-container'>
+<div class='lightBulb-container'>
+<a href='/off'><div id='lightBulb' class='lightBulb'>ON</div></a>
+</div>
+<div id='optionsMenu'>
+<a href='/static'><button type='button' class='optionMenu'>Static</button></a>
+<a href='/heartbeat'><button type='button' class='optionMenu'>Heartbeat</button></a>
+<a href='/rotate'><button type='button' class='optionMenu'>Rotate</button></a>
+</div>
+</div>
+<div class='slider-container'>
+<div id='fineTuneBtn' class='quantizable'>
+<a href='/brightness/dec'><button class='adjustBtn'>-</button></a>
+<p>Brightness</p>
+<a href='/brightness/inc'><button class='adjustBtn'>+</button></a>
+</div>
+<div id='fineTuneBtn' class='quantizable'>
+<a href='/r/dec'><button class='adjustBtn'>-</button></a>
+<p>Red</p>
+<a href='/r/inc'><button class='adjustBtn'>+</button></a>
+</div>
+<div id='fineTuneBtn' class='quantizable'>
+<a href='/g/dec'><button class='adjustBtn'>-</button></a>
+<p>Green</p>
+<a href='/g/inc'><button class='adjustBtn'>+</button></a>
+</div>
+<div id='fineTuneBtn' class='quantizable'>
+<a href='/b/dec'><button class='adjustBtn'>-</button></a>
+<p>Blue</p>
+<a href='/b/inc'><button class='adjustBtn'>+</button></a>
+</div>
+</div>
+<div class='paletteContainer'>
+<a href='/color/0'><button class='colorBtn' style='background-color: #FF9329;'></button></a>
+<a href='/color/1'><button class='colorBtn' style='background-color: #FFC58F;'></button></a>
+<a href='/color/2'><button class='colorBtn' style='background-color: #FFD6AA;'></button></a>
+<a href='/color/3'><button class='colorBtn' style='background-color: #FFF1E0;'></button></a>
+<a href='/color/4'><button class='colorBtn' style='background-color: #FFFAF4;'></button></a>
+<a href='/color/5'><button class='colorBtn' style='background-color: #FFFFF0;'></button></a>
+<a href='/color/6'><button class='colorBtn' style='background-color: #FFFFFB;'></button></a>
+<a href='/color/7'><button class='colorBtn' style='background-color: #FFFFFF;'></button></a>
+<a href='/color/8'><button class='colorBtn' style='background-color: #C9E2FF;'></button></a>
+<a href='/color/9'><button class='colorBtn' style='background-color: #409CFF;'></button></a>
+<a href='/color/10'><button class='colorBtn' style='background-color: #F2D68B;'></button></a>
+<a href='/color/11'><button class='colorBtn' style='background-color: #EF8A1B;'></button></a>
+<a href='/color/12'><button class='colorBtn' style='background-color: #ED583B;'></button></a>
+<a href='/color/13'><button class='colorBtn' style='background-color: #F4B8CE;'></button></a>
+<a href='/color/14'><button class='colorBtn' style='background-color: #EFA8A8;'></button></a>
+<a href='/color/15'><button class='colorBtn' style='background-color: #E85B94;'></button></a>
+<a href='/color/16'><button class='colorBtn' style='background-color: #C9245F;'></button></a>
+<a href='/color/17'><button class='colorBtn' style='background-color: #EF353F;'></button></a>
+<a href='/color/18'><button class='colorBtn' style='background-color: #BF1D29;'></button></a>
+<a href='/color/19'><button class='colorBtn' style='background-color: #89030D;'></button></a>
+<a href='/color/20'><button class='colorBtn' style='background-color: #D4EEEB;'></button></a>
+<a href='/color/21'><button class='colorBtn' style='background-color: #C6E4D9;'></button></a>
+<a href='/color/22'><button class='colorBtn' style='background-color: #85D0C6;'></button></a>
+<a href='/color/23'><button class='colorBtn' style='background-color: #73CDD1;'></button></a>
+<a href='/color/24'><button class='colorBtn' style='background-color: #00BDAE;'></button></a>
+<a href='/color/25'><button class='colorBtn' style='background-color: #1194A7;'></button></a>
+<a href='/color/26'><button class='colorBtn' style='background-color: #10686B;'></button></a>
+<a href='/color/27'><button class='colorBtn' style='background-color: #597C2B;'></button></a>
+<a href='/color/28'><button class='colorBtn' style='background-color: #0A5C36;'></button></a>
+<a href='/color/29'><button class='colorBtn' style='background-color: #14452F;'></button></a>
+<a href='/color/30'><button class='colorBtn' style='background-color: #C1E9FC;'></button></a>
+<a href='/color/31'><button class='colorBtn' style='background-color: #6ACDE6;'></button></a>
+<a href='/color/32'><button class='colorBtn' style='background-color: #0087BF;'></button></a>
+<a href='/color/33'><button class='colorBtn' style='background-color: #29338E;'></button></a>
+<a href='/color/34'><button class='colorBtn' style='background-color: #D69AC8;'></button></a>
+<a href='/color/35'><button class='colorBtn' style='background-color: #C28DE0;'></button></a>
+<a href='/color/36'><button class='colorBtn' style='background-color: #9990BA;'></button></a>
+<a href='/color/37'><button class='colorBtn' style='background-color: #7F4599;'></button></a>
+<a href='/color/38'><button class='colorBtn' style='background-color: #691D69;'></button></a>
+<a href='/color/39'><button class='colorBtn' style='background-color: #411E5C;'></button></a>
+</div>
+</body>
 </html>
     )""";
     webServer.send(200, "text/html", strHtmlContent);
@@ -1154,7 +1103,7 @@ void lamp_off(void){
 
 void increase_brightness(void){
     if (ledState){
-        ledBrightness += LED_BRIGHTNESS_INCREMENT;
+        ledBrightness += LED_BRIGHTNESS_INC;
         if (ledBrightness > LED_MAX_BRIGHTNESS){
             ledBrightness = LED_MAX_BRIGHTNESS;
         }
@@ -1170,7 +1119,7 @@ void increase_brightness(void){
 
 void decrease_brightness(void){
     if (ledState){
-        ledBrightness -= LED_BRIGHTNESS_INCREMENT;
+        ledBrightness -= LED_BRIGHTNESS_INC;
         if (ledBrightness < LED_MIN_BRIGHTNESS){
             ledBrightness = LED_MIN_BRIGHTNESS;
         }
@@ -1257,6 +1206,7 @@ void led_setToHeartbeat(void){
     if (ledState){
         ledPattern = HEARTBEAT;
         ledBrightnessInc = ledBrightness;
+        heartbeatDir = false;
         FastLED.showColor(ledColor, ledBrightnessInc);
         timerEn = true;
         timeStamp = millis();
@@ -1266,7 +1216,7 @@ void led_setToHeartbeat(void){
 
 
 void increase_redVal(void){
-    redVal += LED_COLOR_TUNE_INCREMENT;
+    redVal += LED_COLOR_TUNE_INC;
     if (redVal > 255){
         redVal = 255;
     }
@@ -1276,7 +1226,7 @@ void increase_redVal(void){
 
 
 void increase_greenVal(void){
-    greenVal += LED_COLOR_TUNE_INCREMENT;
+    greenVal += LED_COLOR_TUNE_INC;
     if (greenVal > 255){
         greenVal = 255;
     }
@@ -1286,7 +1236,7 @@ void increase_greenVal(void){
 
 
 void increase_blueVal(void){
-    blueVal += LED_COLOR_TUNE_INCREMENT;
+    blueVal += LED_COLOR_TUNE_INC;
     if (blueVal > 255){
         blueVal = 255;
     }
@@ -1296,7 +1246,7 @@ void increase_blueVal(void){
 
 
 void decrease_redVal(void){
-    redVal -= LED_COLOR_TUNE_INCREMENT;
+    redVal -= LED_COLOR_TUNE_INC;
     if (redVal < 0){
         redVal = 0;
     }
@@ -1306,7 +1256,7 @@ void decrease_redVal(void){
 
 
 void decrease_greenVal(void){
-    greenVal -= LED_COLOR_TUNE_INCREMENT;
+    greenVal -= LED_COLOR_TUNE_INC;
     if (greenVal < 0){
         greenVal = 0;
     }
@@ -1316,7 +1266,7 @@ void decrease_greenVal(void){
 
 
 void decrease_blueVal(void){
-    blueVal -= LED_COLOR_TUNE_INCREMENT;
+    blueVal -= LED_COLOR_TUNE_INC;
     if (blueVal < 0){
         blueVal = 0;
     }

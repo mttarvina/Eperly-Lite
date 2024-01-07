@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'/>
+<meta name='viewport' content='width=device-width, initial-scale=0.75'/>
+<style>
+:root {
+--bg-1: rgb(0, 0, 0);
+--bg-2: rgb(10, 10, 10);
+--bg-3: rgb(40, 40, 40);
+
+--body-dark-bg1: rgb(0, 0, 0);
+--body-light-bg1: rgb(230, 172, 118);
+
+--dark-building0: rgb(43, 3, 43);
+--dark-building1: rgb(74, 4, 74);
+--dark-building2: rgb(109, 5, 109);
+
+--light-building0: rgb(90, 56, 35);
+--light-building1: rgb(130, 78, 46);
+--light-building2: rgb(191, 121, 78);
+}
+body {
+padding: 0;
+background: var(--body-dark-bg1);
+overflow-y: scroll;
+overflow-x: hidden;
+display: flex;
+align-items: center;
+flex-direction: column;
+font-family: fantasy, cursive;
+}
+#title {
+color: white;
+margin-top: 10vh;
+display: flex;
+justify-content: center;
+}
+#building-container0 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-container1 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-container2 {
+width: 100vw;
+display: flex;
+flex-direction: row;
+justify-content: center;
+position: fixed;
+}
+#building-filter {
+width: 100vw;
+height: 100vh;
+background: linear-gradient(rgb(0, 0, 0, 0) 40%, var(--body-dark-bg1) 90%);
+position: fixed;
+}
+#page-container {
+display: flex;
+align-items: center;
+flex-direction: row;
+flex-wrap: wrap;
+max-width: 100vh;
+position: absolute;
+margin-top: 10vh;
+max-height: 100vh;
+}
+.lightBulb-container {
+max-width: 30vh;
+height: 30vh;
+margin-top: 5vh;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.quantizable {
+display: flex;
+justify-content: space-between;
+margin-top: 20px;
+margin-bottom: 30px;
+max-width: 100vh;
+}
+button {
+width: 100px;
+opacity: 0%;
+margin-left: 30px;
+margin-right: 30px;
+border-radius: 10px;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+font-size: 200%;
+}
+.lightBulb {
+position: relative;
+min-width: 25vh;
+min-height: 25vh;
+background: black;
+border: 1vh solid white;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 300%;
+color: white;
+box-shadow: 5px 5px 10px 2px rgba(0,0,0,.8);
+}
+a {
+text-decoration: none;
+}
+#optionsMenu {
+max-width: 30vh;
+height: 30vh;
+margin-top: 5vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 2vh;
+visibility: hidden;
+}
+#building01 {
+width: 30vh;
+height: 75vh;
+background: var(--dark-building0);
+margin-left: 400px;
+margin-top: 25vh;
+position: absolute;
+}
+#building02 {
+width: 15vh;
+height: 60vh;
+background: var(--dark-building0);
+margin-left: 100px;
+margin-top: 40vh;
+position: absolute;
+}
+#building03 {
+width: 35vh;
+height: 70vh;
+background: var(--dark-building0);
+margin-left: -350px;
+margin-top: 30vh;
+position: absolute;
+}
+#building11 {
+width: 15vh;
+height: 55vh;
+background: var(--dark-building1);
+margin-left: -350px;
+margin-top: 45vh;
+position: absolute;
+}
+#building12 {
+width: 15vh;
+height: 50vh;
+background: var(--dark-building1);
+margin-left: -150px;
+margin-top: 50vh;
+position: absolute;
+}
+#building13 {
+width: 15vh;
+height: 55vh;
+background: var(--dark-building1);
+margin-left: 400px;
+margin-top: 45vh;
+position: absolute;
+}
+#building21 {
+width: 45vh;
+height: 52vh;
+background: var(--dark-building2);
+margin-left: 220px;
+margin-top: 52vh;
+position: absolute;
+}
+#building22 {
+width: 15vh;
+height: 50vh;
+background: var(--dark-building2);
+margin-left: -420px;
+margin-top: 50vh;
+position: absolute;
+}
+</style>
+<title>Eperly-Lite v1.1</title>
+</head>
+<body id='body'>
+<div id='building-container0'>
+<div id='building01' class='building'></div>
+<div id='building02' class='building'></div>
+<div id='building03' class='building'></div>
+</div>
+<div id='building-container1'>
+<div id='building11' class='building'></div>
+<div id='building12' class='building'></div>
+<div id='building13' class='building'></div>
+</div>
+<div id='building-container2'>
+<div id='building21' class='building'></div>
+<div id='building22' class='building'></div>
+<div id='building23' class='building'></div>
+</div>
+<div id='building-filter'></div>
+<div id='page-container'>
+<div class='lightBulb-container'>
+<a href='/on'><div class='lightBulb'>OFF</div></a>
+</div>
+<div id='optionsMenu'>
+<button type='button' class='optionMenu'>Static</button>
+<button type='button' class='optionMenu'>Heartbeat</button>
+<button type='button' class='optionMenu'>Rotate</button>
+</div>
+</div>
+</body>
+</html>
