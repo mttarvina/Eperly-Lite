@@ -4,7 +4,7 @@
 //  MCU:                diyMore ESP8266 with 0.99" OLED LCD Module
 //  Author:             Mark Angelo Tarvina (Tarvs' Hobbytronics)
 //  Email:              mttarvina@gmail.com
-//  Last Updated:       08.Dec.2023
+//  Last Updated:       09.Jan.2024
 // *****************************************************************************
 
 
@@ -17,9 +17,10 @@
 //      + Updated server webpage, added CSS styling by @dajcoding
 //      + Increased wait time for logo display from 3secs to 5secs
 //      + Increased LED brightness adjustment increment from 5 to 25
-//      + Increase LED heartbeat transition delay from 25ms to 50ms
-//      + Increase LED heartbeat brightness increment from 1 to 2
-//      + Increase LED color adjustment (r,g,b values) increment from 1 to 5
+//      + Increased LED heartbeat transition delay from 25ms to 50ms
+//      + Increased LED heartbeat brightness increment from 1 to 2
+//      + Increased LED rotate transition delay from 120ms to 1000ms
+//      + Increased LED color adjustment (r,g,b values) increment from 1 to 5
 //      + Updated color palette
 //      + Modified the approach when changing LED color
 //          - Now checks the uri link and determines what color index is present
@@ -38,7 +39,7 @@
 
 
 // Definitions
-#define DEBUG                           true
+#define DEBUG                           false
 #define SERIAL_TIMEOUT                  8000
 #define WIFI_PORT                       80
 #define SERVER_TIMEOUT                  5000                                    // (ms)
@@ -46,7 +47,7 @@
 #define LED_MIN_BRIGHTNESS              15
 #define LED_NUM                         8                                       // 8 LEDs in Neopixel ring
 #define LED_PIN                         D1                                      // D5
-#define LED_ROT_TRANS_DELAY             120                                     // (ms)
+#define LED_ROT_TRANS_DELAY             1000                                    // (ms)
 #define LED_HRTBT_TRANS_DELAY           50                                      // (ms)
 #define LED_HRTBT_BRIGHTNESS_INC        2                                       
 #define LED_BRIGHTNESS_INC              25
